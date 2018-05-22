@@ -52,11 +52,13 @@ gt_poses = np.zeros((0, 2), dtype=np.float)  # (x, y) relative camera coordinate
 poses = np.zeros((0, 2), dtype=np.float)  # (x, y) relative camera coordinates
 R_p, t_p = None, None
 
-while True:
-    im0_path = '%s/%06d.png' % (dataset, fIdx)
-    im1_path = '%s/%06d.png' % (dataset, fIdx+1)
-    im1 = cv2.imread(im0_path)
-    im2 = cv2.imread(im1_path)
+cap = cv2.VideoCapture('../../Datasets/Telefono/Calibration/Telefono/Video1.mp4')
+
+ret, frame1 = cap.read()
+while cap.isOpened():
+    ret, frame2 = cap.read()
+    im1 = frame1
+    im2 = frame2
     if fIdx == 500:
         plt.waitforbuttonpress()
     if im1 is None:
@@ -187,4 +189,4 @@ while True:
     plt.draw()
     plt.waitforbuttonpress(0.02)
 
-    fIdx += 1
+    frame1 = frame2
