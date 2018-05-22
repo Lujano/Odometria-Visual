@@ -6,8 +6,13 @@
             "type": "shell",
             "command": "g++",
             "args": [
-                "-g",
-                "main.cpp"
+                "-o",
+                "test_1",
+                "test_1.cpp",
+                "`pkg-config",
+                "opencv",
+                "--cflags",
+                "--libs`"
             ],
             "group": {
                 "kind": "build",

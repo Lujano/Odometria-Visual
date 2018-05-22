@@ -10,9 +10,7 @@
             },
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/include/c++/5",
-                "/usr/include/boost/tr1/tr1",
-                "/usr/include/vtk-6.2/vtksys/ios/iostream"
+                "/usr/local/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
