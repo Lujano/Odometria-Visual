@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/Hough.out",
             "args": [],
-            "stopAtEntry": true, // Activa los breakpoints para debug
+            "stopAtEntry": false, // Activa los breakpoints para debug
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": true,

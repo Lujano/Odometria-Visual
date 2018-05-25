@@ -6,10 +6,13 @@
             "type": "shell",
             "command": "g++",
             "args": [
-                "-g", // Activa breakpoints
-                "main.cpp",
                 "-o",
-                "main.out"
+                "main.out",
+                "main.cpp",
+                "`pkg-config",
+                "opencv",
+                "--cflags",
+                "--libs`"
             ],
             "group": {
                 "kind": "build",
