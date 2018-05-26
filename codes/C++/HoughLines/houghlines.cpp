@@ -62,6 +62,7 @@ int main(int argc, char** argv)
 #else
     vector<Vec4i> lines;
     HoughLinesP(dst, lines, 1, CV_PI/180, 50, 50, 10 );
+    cout << lines[0][0]; // Linea de detectada
     for( size_t i = 0; i < lines.size(); i++ )
     {
         Vec4i l = lines[i];

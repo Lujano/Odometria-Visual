@@ -16,5 +16,9 @@
 			"path": "C++/LoadImage"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.associations": {
+			"iostream": "cpp"
+		}
+	}
 }
