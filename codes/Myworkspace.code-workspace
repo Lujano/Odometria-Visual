@@ -1,9 +1,6 @@
 {
 	"folders": [
 		{
-			"path": "C++"
-		},
-		{
 			"path": "C++/Ejemplo1"
 		},
 		{
@@ -14,11 +11,42 @@
 		},
 		{
 			"path": "C++/LoadImage"
+		},
+		{
+			"path": "C++/CreateImage"
+		},
+		{
+			"path": "C++/OpenVideo"
+		},
+		{
+			"path": "C++/Example2_4"
+		},
+		{
+			"path": "C++/SLAM_Autos"
 		}
 	],
 	"settings": {
 		"files.associations": {
-			"iostream": "cpp"
+			"iostream": "cpp",
+			"*.tcc": "cpp",
+			"fstream": "cpp",
+			"cctype": "cpp",
+			"cmath": "cpp",
+			"cstddef": "cpp",
+			"cstdio": "cpp",
+			"cstdlib": "cpp",
+			"cstring": "cpp",
+			"ctime": "cpp",
+			"cwchar": "cpp",
+			"atomic": "cpp",
+			"strstream": "cpp",
+			"chrono": "cpp",
+			"cstdint": "cpp",
+			"iosfwd": "cpp",
+			"ratio": "cpp",
+			"thread": "cpp",
+			"cinttypes": "cpp",
+			"typeindex": "cpp"
 		}
 	}
 }
