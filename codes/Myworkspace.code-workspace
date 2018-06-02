@@ -23,6 +23,18 @@
 		},
 		{
 			"path": "C++/SLAM_Autos"
+		},
+		{
+			"path": "C++/Python_embedded"
+		},
+		{
+			"path": "C++/GNUplot"
+		},
+		{
+			"path": "C++/ORB"
+		},
+		{
+			"path": "C++/Examples"
 		}
 	],
 	"settings": {
@@ -46,7 +58,13 @@
 			"ratio": "cpp",
 			"thread": "cpp",
 			"cinttypes": "cpp",
-			"typeindex": "cpp"
+			"typeindex": "cpp",
+			"vector": "cpp",
+			"iomanip": "cpp",
+			"array": "cpp",
+			"slist": "cpp",
+			"initializer_list": "cpp",
+			"utility": "cpp"
 		}
 	}
 }

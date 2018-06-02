@@ -8,8 +8,8 @@
             "args": [
                 "-g",
                 "-o",
-                "main_slide.out",
-                "main_slide.cpp",
+                "mainnew1.out",
+                "mainnew1.cpp",
                 "`pkg-config",
                 "opencv",
                 "--cflags",

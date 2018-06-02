@@ -46,18 +46,21 @@ int main()
         index2_str = file_directory + patch::to_string(index1_int+1)+".png";
         src = imread(index1_str, 1); // Cargar con color, flag = 1
         src2 = imread(index2_str, 1);
-     
+       
 
-        while ( src2.empty() & index1_int < 1049)
+
+        while ( src2.empty() & index1_int < 1049) // En caso de lectura de una imagen no existe
          {
             index1_int = index1_int+1;// Saltar a la siguiente imagen
-            cout<< "Imagen2 no encontrada:"<< index1_int<< endl;
+            cout<< "Imagen no encontrada:"<< index1_int<< endl;
             index2_str = file_directory + patch::to_string(index1_int+1)+".png";
             src2 = imread(index2_str, 1);
         }
-        
-        imshow("source1", src);
-        imshow("source2", src2);
+        Mat gray1, gray2;
+        cvtColor(src, gray1, CV_BGR2GRAY);
+        cvtColor(src2, gray2, CV_BGR2GRAY);
+        imshow("source1", gray1);
+        imshow("source2", gray2);
         waitKey(1);
         cout<< index1_int<< endl; 
         index1_int ++; // Siguiente par de imagenes

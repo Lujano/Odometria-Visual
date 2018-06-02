@@ -38,8 +38,11 @@ int main(int argc, char** argv)
         cout << "can not open " << filename << endl;
         return -1;
     }
-
+    int height = src.cols;
+    int width = src.rows;
+    cout<< "Tamaño"<< src.size()<< "Height ="<< height<< "Rows" << width<<endl;
     imshow("source", src);
+    cv::ROI
     waitKey();
 
     return 0;

@@ -12,6 +12,13 @@ def read_poses(path, db, fIdx):
     try:
         with open(pose_file, 'r') as f:
             lines = f.readlines()[fIdx:]
+            print(lines[0])
+            T_w_cam0 = np.fromstring(lines[0], dtype=float, sep=' ')
+            T_w_cam0 = T_w_cam0.reshape(3, 4)
+            print(T_w_cam0)
+            T_w_cam0 = np.vstack((T_w_cam0, [0, 0, 0, 1]))
+            print(T_w_cam0[0, 3])
+
 
             for line in lines:
                 T_w_cam0 = np.fromstring(line, dtype=float, sep=' ')
@@ -20,6 +27,7 @@ def read_poses(path, db, fIdx):
                 gt_poses = np.vstack([gt_poses, [T_w_cam0[0, 3], T_w_cam0[2, 3]]])
 
             gt_poses -= gt_poses[0]
+            np.savetxt('GPS_data', gt_poses, fmt='%1.12e')
 
     except FileNotFoundError:
         print('Ground truth poses are not avaialble for sequence ' +
