@@ -35,6 +35,9 @@
 		},
 		{
 			"path": "C++/Examples"
+		},
+		{
+			"path": "C++/Calibracion"
 		}
 	],
 	"settings": {

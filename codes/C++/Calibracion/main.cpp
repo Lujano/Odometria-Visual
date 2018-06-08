@@ -1,16 +1,16 @@
-#include <opencv2/features2d.hpp>
-#include <opencv2/videoio.hpp>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <ctime>
+#include <cstdio>
+
+#include <opencv2/core.hpp>
+#include <opencv2/core/utility.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/calib3d.hpp>
-#include <opencv2/highgui.hpp>      //for imshow
-#include <vector>
-#include <iostream>
-#include <iomanip>
-
-
-#include "stats.h" // Stats structure definition
-#include "utils.h" // Drawing and printing functions
-
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/videoio.hpp>
+#include <opencv2/highgui.hpp>
 using namespace std;
 using namespace cv;
 
