@@ -38,6 +38,12 @@
 		},
 		{
 			"path": "C++/Calibracion"
+		},
+		{
+			"path": "C++/ODO"
+		},
+		{
+			"path": "C++/Feature_Detection"
 		}
 	],
 	"settings": {
