@@ -12,7 +12,7 @@ int main()
     double duration;
     start = clock();
     /* Your algorithm here */
-    string video_name = "../../../../Datasets/Telefono/VID_20180519_061718.mp4";
+    string video_name = "../../../../../dataset/calib3d/camera_calibration/Images/Chessboard_BLU.mp4";
     VideoCapture video_in; // open the default camera
     /*
     duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;

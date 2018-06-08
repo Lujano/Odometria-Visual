@@ -8,7 +8,7 @@
             "args": [
                 "-o",
                 "main.out",
-                "main.cpp",
+                "camera_calibration.cpp",
                 "`pkg-config",
                 "opencv",
                 "--cflags",

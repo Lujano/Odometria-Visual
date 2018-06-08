@@ -128,7 +128,7 @@ Mat Tracker::process(const Mat frame, Stats& stats)
 
 int main()
 {
-    string video_name = "../../../../Datasets/Telefono/Casio2.mp4";
+    string video_name = "../../../../../dataset/Camera_calib/Telefono/Casio2.mp4";
     const string NAME = "Output_Casio2.avi";
     VideoCapture video_in;
     VideoWriter outputVideo; 
@@ -224,7 +224,7 @@ int main()
         cv::imshow("Video", res_frame);
         resize(res_frame, res_frame, Size (640, 480));
         outputVideo << res_frame;
-        ify(waitKey(1)==27) break; //quit on ESC button
+        if(waitKey(1)==27) break; //quit on ESC button
     }
     akaze_stats /= i - 1;
     orb_stats /= i - 1;
