@@ -6,6 +6,7 @@
 #include "opencv2/highgui.hpp"
 
 using namespace cv;
+using namespace std;
 using namespace cv::xfeatures2d;
 
 void readme();
@@ -26,7 +27,7 @@ int main( int argc, char** argv )
 
   Ptr<SURF> detector = SURF::create( minHessian );
 
-  std::vector<KeyPoint> keypoints_1;
+  vector<KeyPoint> keypoints_1;
 
   detector->detect( img_1, keypoints_1 );
 
