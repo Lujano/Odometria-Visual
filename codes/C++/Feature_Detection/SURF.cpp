@@ -5,6 +5,7 @@
 #include "opencv2/xfeatures2d.hpp"
 #include "opencv2/highgui.hpp"
 
+
 using namespace cv;
 using namespace std;
 using namespace cv::xfeatures2d;
@@ -14,11 +15,11 @@ void readme();
 /** @function main */
 int main( int argc, char** argv )
 {
-  if( argc != 3 )
+  if( argc != 2 )
   { readme(); return -1; }
 
   Mat img_1 = imread( argv[1], IMREAD_GRAYSCALE );
-
+  
   if( !img_1.data)
   { std::cout<< " --(!) Error reading images " << std::endl; return -1; }
 
@@ -30,7 +31,8 @@ int main( int argc, char** argv )
   vector<KeyPoint> keypoints_1;
 
   detector->detect( img_1, keypoints_1 );
-
+  Mat descriptors;
+  detector->compute( img_1, keypoints_1, descriptors );
   //-- Draw keypoints
   Mat img_keypoints_1; 
 
