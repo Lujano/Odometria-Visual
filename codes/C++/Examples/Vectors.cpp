@@ -31,5 +31,10 @@ int main(int argc, char const *argv[])
        printf("%6.*lf ", 4, *i);
     printf("]");
     cout<< "vpoints"<< (*vpoints.begin()).x << endl;
+    //cout<< "Matrix m = "<< m<< endl;
+    Mat M = Mat(0, 3, CV_64F); // Matriz vacia de vectores de tres columnas
+    Mat row = 2.55*Mat::ones(1, 3, CV_64F);
+    M.push_back(row);
+    cout<< "Matrix"<< M.row(0)<< endl;
     return 0;
 }

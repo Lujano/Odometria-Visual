@@ -29,7 +29,7 @@ namespace patch
   
 static void help();
 void readme();
-int Odometry(Mat img_1, Mat img_2);
+int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t);
 void thresholdTrans(vector<KeyPoint> &points, int thresholdy, int w, int h, vector<KeyPoint>  &pointsOut); //verifica si el punto se encuentra en una ventana dada
 void thresholdRot(vector<KeyPoint> &points, int thresholdx, int w, int h, vector<KeyPoint> &pointsOut); //verifica si el punto se encuentra en una ventana dada
 void checkStatus(vector<Point2f> &points, vector<uchar> &status, vector<Point2f> &pointsOut);
@@ -59,6 +59,12 @@ cv::CommandLineParser parser(argc, argv,
     index1_int = 57 ; // Primera imagen a leer
     int break_prcs =0;
 
+    Mat odometry = Mat::zeros(1, 3, CV_64F); // Matriz vacia de vectores de longitud 3 (comienza con 000)
+    Mat R, t; // matriz de rotacion y traslacion
+    Mat R_p = Mat::eye(Size(3, 3), CV_64F); // matriz de rotacion temporal
+    Mat traslation;
+
+   
     while(index1_int < 1049){ // penultima imagen  a leer
         index1_str = file_directory + patch::to_string(index1_int)+".png";
         index2_str = file_directory + patch::to_string(index1_int+1)+".png";
@@ -75,13 +81,28 @@ cv::CommandLineParser parser(argc, argv,
         Mat gray1, gray2;
         cvtColor(src, gray1, CV_BGR2GRAY);
         cvtColor(src2, gray2, CV_BGR2GRAY);
-        break_prcs = Odometry(src, src2);
+        break_prcs = Odometry(src, src2, R, t);
         if (break_prcs == 1)
-          return 0; // Mostrar la imagen hasta que se presione una teclas
-        cout<< index1_int<< endl; 
+         break; // Mostrar la imagen hasta que se presione una teclas
+        //odometry.push_back(despl)
+        cout<< "Matrix R="<< R<<endl;
+        cout<< "Matrix t="<< t<<endl;
+        cout<<"fadsfas"<< t<< endl;
+        
+        cout << "despues"<<t << endl;
+        traslation = R_p*t;
+        R_p = R*R_p;
+        odometry.push_back(traslation.t());
+        
+        cout<< "Traslation" << traslation<< endl;
+
+        cout<< "Indice =" << index1_int<< endl; 
         index1_int ++; // Siguiente par de imagenes
        
     }
+
+    FileStorage file1("Output_fast.yaml", FileStorage::WRITE); // Archivo para guardar el desplazamiento 
+    file1 << "Trayectoria"<< odometry;
     clock_t end = clock();
     double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
     cout << "elapsed time = "<< elapsed_secs << endl;
@@ -96,7 +117,7 @@ static void help()
             "Usage:\n"
             "./main.out <directory_name>, Default is ../data/pic1.png\n" << endl;
 }
-int Odometry(Mat img_1, Mat img_2){
+int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t){
   int w1, h1; // Image size
   w1 = img_1.size().width;
   h1 = img_1.size().height;
@@ -158,17 +179,8 @@ int Odometry(Mat img_1, Mat img_2){
 
   //--Paso 5: Calcular la matriz de rotación y traslación de puntos entre imagenes 
    int p;
-   Mat R, t; // matriz de rotación y traslación
    p = recoverPose(E, points1_OK, points2_OK, R, t, focal, Point2d(cx, cy), noArray()   );
-   cout<< "Matrix R="<< R<<endl;
-   cout<< "Matrix t="<< t<<endl;
 
-   Mat traslation;
-   traslation = R*t;
-   FileStorage file1("Output_fast.yaml", FileStorage::WRITE);
-   cout<< "Traslation" << traslation<< endl;
-
-  file1 << "Rotation"<< R;
 
 //-- Paso 6: Draw keypoints
   Mat img_keypoints_1, img_keypoints_2, img_keypointsOK; 

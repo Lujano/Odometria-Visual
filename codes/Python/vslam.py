@@ -160,7 +160,6 @@ while True:
 
 
     t_p = t_p + scale * (R_p * t)
-
     #
     # R2 = R_p
     R_p = R * R_p
@@ -176,6 +175,7 @@ while True:
     #     print("hola")
 
     # Stack up the poses
+
     poses = np.vstack([poses, [t_p[0, 0], t_p[2, 0]]])  # x, y
     gt_poses = odotools.gt_poses[1:len(poses)+1, 0:2]
 

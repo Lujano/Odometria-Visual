@@ -21,6 +21,8 @@ i = 0
 
 while True:
 
+
+
     i+=1
 
     gt_poses = np.loadtxt("GPS_data.txt")
