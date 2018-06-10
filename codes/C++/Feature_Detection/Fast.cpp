@@ -45,19 +45,31 @@ int main( int argc, char** argv )
   
   
   // Calcular flujo optico
-  vector<Point2f> points_f, points_out;
+  vector<Point2f> points1_f, points2_out;
   vector<int> point_indexs;
-  cv::KeyPoint::convert(keypoints_1,points_f,point_indexs);
+  cv::KeyPoint::convert(keypoints_1,points1_f,point_indexs);
   vector<uchar> status;
   vector<float> err;
-  sparse-> calc(img_1, img_2, points_f, points_out, status, err) ;
+  sparse-> calc(img_1, img_2, points1_f, points2_out, status, err) ;
+  double fx, fy, focal, cx, cy;
+  fx = 7.188560000000e+02;
+  fy = 7.188560000000e+02;
+  cx =  6.071928000000e+02;
+  cy = 1.852157000000e+02;
+  focal = fx;
+   Mat mask, E, R, t;
+   int p;
+  E = findEssentialMat(points1_f, points2_out, focal, Point2d(cx, cy), RANSAC, 0.999, 1.0, mask);
 
-  
-  // Compute descriptors
-  Mat descriptors;
+  p = recoverPose(E, points1_f, points2_out, R, t, focal, Point2d(cx, cy), noArray()   );
+  cout<< "Matrix R="<< R<<endl;
+   cout<< "Matrix t="<< t<<endl;
+   Mat traslation;
+   traslation = R*t;
+   FileStorage file1("Output_fast.txt", FileStorage::WRITE);
+   cout<< "Traslation" << traslation<< endl;
 
-  //detector_2->compute(img_2, keypoints_2, descriptors_2);
-
+  file1 << "Traslation"<< R;
 
 //-- Draw keypoints
   Mat img_keypoints_1, img_keypoints_2; 

@@ -41,8 +41,8 @@ def thresholdRot(img, thresholdx, w, h): # verifica si el punto se encuentra en 
     return imgPoints
 
 #Stanford deep learning, berkley
-fIdx = 60
-dataset = '../../Datasets/kitti/odometry/00/image_2'
+fIdx = 57
+dataset = '../../../Datasets/kitti/odometry/00/image_2'
 # dataset = '../ressources/kitti/odometry/02/image_2'  # OR use that database
 
 import odotools as odotools
@@ -125,6 +125,8 @@ while True:
 
     E, mask = cv2.findEssentialMat(im2KPts_ok, im1KPts_ok, focal = focal, pp=(pp[0], pp[1]), method=cv2.RANSAC, prob=0.999, threshold=1.0)
     points, R, t, mask = cv2.recoverPose(E, im2KPts_ok, im1KPts_ok)
+    print("Matrix R = {}".format(R))
+    print("Matrix t = {}".format(t))
     t = abs(t)
 
     # Display the figures
