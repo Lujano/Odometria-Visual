@@ -30,5 +30,6 @@ int main(int argc, char const *argv[])
     for (std::vector<float>::const_iterator i = a.begin(); i != a.end(); ++i)
        printf("%6.*lf ", 4, *i);
     printf("]");
+    cout<< "vpoints"<< (*vpoints.begin()).x << endl;
     return 0;
 }

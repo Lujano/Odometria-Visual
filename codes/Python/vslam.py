@@ -78,13 +78,16 @@ while True:
     im1KPtsOut = im1.copy() #
     cv2.drawKeypoints(im1GRAY, im1KPts, outImage=im1KPtsOut, color=(0, 0, 255))
 
-
     im1KPts_means = cv2.KeyPoint_convert(im1KPts) # puntos en formato (x, y) en la imagen 1
+
     #    plt.scatter(im1KPts_means[:, 0], 1KPts_means[:, 1], marker='+', s=100)
+
+
     w1, h1 = im1.shape[1], im1.shape[0]
 
     im1KPts_means = thresholdRot(im1KPts_means, 40, w1, h1)
     im1KPts_means = thresholdTrans(im1KPts_means, 50, w1, h1)
+
 
     # Track the keypoints in other frame
     criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 40, 0.001)## 40, 0.001
@@ -124,9 +127,12 @@ while True:
     pp = [x,y]  # TODO: Set the center point [x, y]
 
     E, mask = cv2.findEssentialMat(im2KPts_ok, im1KPts_ok, focal = focal, pp=(pp[0], pp[1]), method=cv2.RANSAC, prob=0.999, threshold=1.0)
-    points, R, t, mask = cv2.recoverPose(E, im2KPts_ok, im1KPts_ok)
+    points, R, t, mask = cv2.recoverPose(E, im1KPts_ok, im2KPts_ok)
     print("Matrix R = {}".format(R))
     print("Matrix t = {}".format(t))
+    print("Puntos detectados ={}".format(np.size(im1KPts)))
+    print("puntos bajo analisis ={}".format(np.size(im1KPts_means)/2))
+    print("Puntos emperejados ={}".format(np.size(im1KPts_ok)/2))
     t = abs(t)
 
     # Display the figures
