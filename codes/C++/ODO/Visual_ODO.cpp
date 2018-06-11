@@ -7,6 +7,8 @@
 #include "opencv2/xfeatures2d.hpp"
 #include "opencv2/video/tracking.hpp"
 #include "opencv2/core/types.hpp"
+#include <opencv2/plot.hpp>
+
 using namespace cv;
 using namespace cv::xfeatures2d;
 using namespace std;
@@ -29,7 +31,7 @@ namespace patch
   
 static void help();
 void readme();
-int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t);
+int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut);
 void thresholdTrans(vector<KeyPoint> &points, int thresholdy, int w, int h, vector<KeyPoint>  &pointsOut); //verifica si el punto se encuentra en una ventana dada
 void thresholdRot(vector<KeyPoint> &points, int thresholdx, int w, int h, vector<KeyPoint> &pointsOut); //verifica si el punto se encuentra en una ventana dada
 void checkStatus(vector<Point2f> &points, vector<uchar> &status, vector<Point2f> &pointsOut);
@@ -62,9 +64,12 @@ cv::CommandLineParser parser(argc, argv,
     Mat odometry = Mat::zeros(1, 3, CV_64F); // Matriz vacia de vectores de longitud 3 (comienza con 000)
     Mat R, t; // matriz de rotacion y traslacion
     Mat R_p = Mat::eye(Size(3, 3), CV_64F); // matriz de rotacion temporal
-    Mat traslation;
-
+    Mat traslation = Mat::zeros(3, 1, CV_64F);
+    Mat plot_x;
+    Mat plot_y;
+    Mat img_fast;
    
+
     while(index1_int < 1049){ // penultima imagen  a leer
         index1_str = file_directory + patch::to_string(index1_int)+".png";
         index2_str = file_directory + patch::to_string(index1_int+1)+".png";
@@ -81,22 +86,46 @@ cv::CommandLineParser parser(argc, argv,
         Mat gray1, gray2;
         cvtColor(src, gray1, CV_BGR2GRAY);
         cvtColor(src2, gray2, CV_BGR2GRAY);
-        break_prcs = Odometry(src, src2, R, t);
+        break_prcs = Odometry(src, src2, R, t, img_fast);
         if (break_prcs == 1)
          break; // Mostrar la imagen hasta que se presione una teclas
         //odometry.push_back(despl)
-        cout<< "Matrix R="<< R<<endl;
-        cout<< "Matrix t="<< t<<endl;
-        cout<<"fadsfas"<< t<< endl;
-        
-        cout << "despues"<<t << endl;
-        traslation = R_p*t;
+        //cout<< "Matrix R="<< R<<endl;
+        //cout<< "Matrix t="<< t<<endl;
+        traslation = traslation +R_p*t;
         R_p = R*R_p;
         odometry.push_back(traslation.t());
         
-        cout<< "Traslation" << traslation<< endl;
+        plot_x.push_back(traslation.row(0));
+        plot_y.push_back(traslation.row(2));
+        double min_x, max_x, min_y, max_y;
+        minMaxLoc(plot_x, &min_x, &max_x);
+        minMaxLoc(plot_y, &min_y, &max_y);
+        Mat plot_result;
+        Ptr<plot::Plot2d> plot = plot::createPlot2d(plot_x, plot_y);
+        plot->setPlotBackgroundColor( Scalar( 0, 0, 0 ) );
+        plot->setNeedPlotLine(0);
+        plot->setPlotAxisColor (Scalar( 255, 0, 0 ) );
+        plot->setMaxY (max_y+10);
+        plot->setMinY (min_y-10);
+        plot->setMaxX (max_x+10);
+        plot->setMinX (min_x-10);
+        plot->render( plot_result );
 
-        cout<< "Indice =" << index1_int<< endl; 
+          //imshow("Puntos detectados FAST-1", img_keypoints_1 );
+         
+        //namedWindow("Puntos detectados FAST-1_bajo analisis",WINDOW_NORMAL);
+        //resizeWindow("Puntos detectados FAST-1_bajo analisis", 300, 300);
+        Mat img_res1, img_res2;
+        resize(img_fast,img_res1, Size( 640,300));//resize image
+        resize(plot_result,img_res2, Size(640, 300));//resize image
+        Mat img_win;
+        vconcat(img_res1, img_res2, img_win);
+        imshow( "Fast", img_win);
+        
+        //cout<< "Traslation" << traslation<< endl;
+
+        //cout<< "Indice =" << index1_int<< endl; 
         index1_int ++; // Siguiente par de imagenes
        
     }
@@ -117,7 +146,7 @@ static void help()
             "Usage:\n"
             "./main.out <directory_name>, Default is ../data/pic1.png\n" << endl;
 }
-int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t){
+int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut){
   int w1, h1; // Image size
   w1 = img_1.size().width;
   h1 = img_1.size().height;
@@ -130,7 +159,7 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t){
   
   vector<KeyPoint> keypoints_1; // Vector para almacenar los puntos detectados con FAST
   detector_1 -> detect( img_1, keypoints_1 );
-  cout << "Puntos detectados = "<< keypoints_1.size()<< endl;
+  //cout << "Puntos detectados = "<< keypoints_1.size()<< endl;
 
   //-- Paso 2: Definir la region de interes (ROI)
   vector<KeyPoint> key_points_ROT_out, key_points_TRANS_out, keypointsOK;
@@ -139,7 +168,7 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t){
   thresholdTrans(key_points_ROT_out, thresholdy, w1, h1,key_points_TRANS_out); // Puntos a considerar para la traslacion
   
   keypointsOK = key_points_TRANS_out; // Puntos resultantes bajo analisis
-  cout << "Puntos bajo analisis ="<< keypointsOK.size()<< endl;
+  //cout << "Puntos bajo analisis ="<< keypointsOK.size()<< endl;
 
   //-- Paso 3: Calcular flujo optico entre las dos imagenes
   Size winSize=Size(21, 21);
@@ -187,10 +216,9 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t){
 
   drawKeypoints( img_1, keypoints_1, img_keypoints_1, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
   drawKeypoints( img_1, keypointsOK, img_keypointsOK, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
- 
 
-  imshow("Puntos detectados FAST-1", img_keypoints_1 );
-  imshow("Puntos detectados FAST-1_bajo analisis", img_keypointsOK );
+  imageOut = img_keypointsOK;
+
   char c_input = (char) waitKey(25);
   if( c_input == 'q' | c_input == ((char)27) ) 
     return 1;

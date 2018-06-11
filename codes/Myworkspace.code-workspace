@@ -44,6 +44,9 @@
 		},
 		{
 			"path": "C++/Feature_Detection"
+		},
+		{
+			"path": "C++/Plot_Data"
 		}
 	],
 	"settings": {
