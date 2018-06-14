@@ -22,6 +22,7 @@ static void help()
          <<  "Near the sample file you'll find the configuration file, which has detailed help of "
              "how to edit it.  It may be any OpenCV supported file format XML/YAML." << endl;
 }
+
 class Settings
 {
 public:

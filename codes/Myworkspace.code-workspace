@@ -47,6 +47,9 @@
 		},
 		{
 			"path": "C++/Plot_Data"
+		},
+		{
+			"path": "C++/Video_Stabilization"
 		}
 	],
 	"settings": {
@@ -76,7 +79,27 @@
 			"array": "cpp",
 			"slist": "cpp",
 			"initializer_list": "cpp",
-			"utility": "cpp"
+			"utility": "cpp",
+			"cstdarg": "cpp",
+			"clocale": "cpp",
+			"complex": "cpp",
+			"cwctype": "cpp",
+			"deque": "cpp",
+			"unordered_map": "cpp",
+			"exception": "cpp",
+			"functional": "cpp",
+			"istream": "cpp",
+			"limits": "cpp",
+			"new": "cpp",
+			"ostream": "cpp",
+			"numeric": "cpp",
+			"sstream": "cpp",
+			"stdexcept": "cpp",
+			"streambuf": "cpp",
+			"system_error": "cpp",
+			"type_traits": "cpp",
+			"tuple": "cpp",
+			"typeinfo": "cpp"
 		}
 	}
 }
