@@ -151,7 +151,7 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut){
   w1 = img_1.size().width;
   h1 = img_1.size().height;
   //-- Paso 1: detectar los puntos clave utilizando Fast Features
-  int threshold=70;
+  int threshold=60;
   bool nonmaxSuppression=true;
   int type=FastFeatureDetector::TYPE_9_16;
 
@@ -163,7 +163,7 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut){
 
   //-- Paso 2: Definir la region de interes (ROI)
   vector<KeyPoint> key_points_ROT_out, key_points_TRANS_out, keypointsOK;
-  int thresholdx = 100, thresholdy = 100;
+  int thresholdx = 40, thresholdy = 50;
   thresholdRot(keypoints_1, thresholdx, w1, h1, key_points_ROT_out); // Puntos a considerar para la rotacion
   thresholdTrans(key_points_ROT_out, thresholdy, w1, h1,key_points_TRANS_out); // Puntos a considerar para la traslacion
   
