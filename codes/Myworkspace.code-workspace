@@ -52,7 +52,7 @@
 			"path": "C++/Video_Stabilization"
 		},
 		{
-			"path": "C++/ConvertVideoFrames"
+			"path": "C++/ColorRestauration"
 		}
 	],
 	"settings": {
