@@ -195,8 +195,8 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut){
   //-- Paso 4: Calcular la matriz Esencial
     // Parametros intrisecos de la camara
   double fx, fy, focal, cx, cy;
-  fx =  6.9973934949262184e+02;
-  fy =  6.9973934949262184e+02;
+  fx =  3.5e+03;//6.9973934949262184e+02;3.5mm
+  fy =  3.5e+03;//6.9973934949262184e+02;
   cx =  640;
   cy =  360;
   focal = fx;

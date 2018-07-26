@@ -31,10 +31,7 @@ int main()
     {
         Mat frame;
         video_in >> frame; // get a new frame from camera
-        cvtColor(frame, edges, COLOR_BGR2GRAY);
-        GaussianBlur(edges, edges, Size(7,7), 1.5, 1.5);
-        Canny(edges, edges, 0, 30, 3);
-        imshow("edges",frame);
+        imshow("frame",frame);
         char c_input = (char) waitKey(25);
        if( c_input == 'q' | c_input == ((char)27) ) return 0; // Mostrar la imagen hasta que se presione una teclas
     }
