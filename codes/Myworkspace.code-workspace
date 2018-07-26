@@ -50,6 +50,9 @@
 		},
 		{
 			"path": "C++/Video_Stabilization"
+		},
+		{
+			"path": "C++/ColorRestauration"
 		}
 	],
 	"settings": {
