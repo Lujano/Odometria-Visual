@@ -24,6 +24,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import argparse
 import os
+import time
 
 #-----Funciones a Implementar-----------------------------------------------------
 def apply_mask(matrix, mask, fill_value):
@@ -87,20 +88,20 @@ def sColorBalance(img, porcentaje):
 		flat = canal.reshape(vec_tam)
 
 		assert len(flat.shape) == 1
-
 		flat = np.sort(flat)
 		n_cols = flat.shape[0]
 
 		#Seleccion de los valores minimos y maximos de cada canal RGB de la imagen. Seria el stretching
 		bajo_val  = flat[int(math.floor(n_cols*mitad_porcentaje))]		#Calcula el valor bajo del arreglo ordenado de la matriz (img) de entrada para cada canal
 		alto_val = flat[int(math.ceil(n_cols*(1-mitad_porcentaje)))]		#Calcula el valor alto del arreglo ordenado de la matriz (img) de entrada para cada canal 			Alternativa: alto_val = flat[math.ceil(n_cols*(1-mitad_porcentaje)-1)]
-
+	
 		#Los valores alto y bajo para cada canal RGB. El orden de impresion es Blue, Green, Red
-		print "Lowval: ", alto_val
-		print "Highval: ", bajo_val
+		print("Lowval: {} ".format (alto_val))
+		print("Highval: {}".format(bajo_val))
 
 		# saturate below the low percentile and above the high percentile
 		thresholded = apply_threshold(canal,bajo_val,alto_val)
+
 		# scale the canal
 		normalized = cv2.normalize(thresholded,thresholded.copy(), 0, 255, cv2.NORM_MINMAX)
 #		cv2.imshow("Madfe", normalized)
@@ -118,8 +119,10 @@ if __name__ == '__main__':
 	imgOriginal = cv2.imread(args["image"])
 
 	#-----Llamado a Funcion----------------------------------------------------
+	t1 = time.clock();
 	imgRecuperada = sColorBalance(imgOriginal, 1)	#Porcentaje de umbral inferior y superior respecto al histograma de entrada. Este porcentaje puede ser distinto para c/limite del histograma
-
+	t2 = time.clock();
+	print("elapsed time = {}".format(t2-t1))
 	#-----Resultados----------------------------------------------------
 #	cv2.namedWindow('imgOriginal',cv2.WINDOW_NORMAL)
 #	cv2.imshow("imgOriginal", imgOriginal)
