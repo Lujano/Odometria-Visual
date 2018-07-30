@@ -96,8 +96,10 @@ def sColorBalance(img, porcentaje):
 		alto_val = flat[int(math.ceil(n_cols*(1-mitad_porcentaje)))]		#Calcula el valor alto del arreglo ordenado de la matriz (img) de entrada para cada canal 			Alternativa: alto_val = flat[math.ceil(n_cols*(1-mitad_porcentaje)-1)]
 
 		#Los valores alto y bajo para cada canal RGB. El orden de impresion es Blue, Green, Red
-		print "Lowval: ", alto_val
-		print "Highval: ", bajo_val
+		print(canal)
+		print ("Highval: {} {}".format(alto_val)
+		print ("Lowval: {} {}".format(bajo_val)
+
 
 		# saturate below the low percentile and above the high percentile
 		thresholded = apply_threshold(canal,bajo_val,alto_val)
@@ -123,8 +125,8 @@ if __name__ == '__main__':
 	#-----Resultados----------------------------------------------------
 #	cv2.namedWindow('imgOriginal',cv2.WINDOW_NORMAL)
 #	cv2.imshow("imgOriginal", imgOriginal)
-	cv2.namedWindow('imgRecuperada',cv2.WINDOW_NORMAL)
-	cv2.imshow("imgRecuperada", imgRecuperada)
+	#cv2.namedWindow('imgRecuperada',cv2.WINDOW_NORMAL)
+	#cv2.imshow("imgRecuperada", imgRecuperada)
 
 	#-----Guardado de la imagen Recuperada-------------------------------------------
 	cv2.imwrite(args["image"]+"CR_RGB.jpg", imgRecuperada)
@@ -154,6 +156,6 @@ if __name__ == '__main__':
 #
 #	plt.show()
 
-	cv2.waitKey(0)
-	cv2.destroyAllWindows()
+	#cv2.waitKey(0)
+	#cv2.destroyAllWindows()
 

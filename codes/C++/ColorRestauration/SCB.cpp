@@ -29,6 +29,8 @@ namespace patch
 }
   
 static void help();
+
+void sColorBalance(Mat input_img, Mat &output_img);
 void readme();
 /** @function main */
 int main( int argc, char** argv )
@@ -46,16 +48,16 @@ cv::CommandLineParser parser(argc, argv,
     clock_t begin = clock(); // Tiempo de inicio del codigo
 
     string file_image= parser.get<string>("@image"); // Direccion del directorio con imagenes
-    Mat src;
-    Mat channels[3];
+    Mat src, out;
+    
     src = imread(file_image, 1); // Cargar con color, flag = 1
 
-    imshow("src", src);
-    char c_input = (char) waitKey(-1);
+    //imshow("src", src);
+    //char c_input = (char) waitKey(-1);
     //if( c_input == 'q' | c_input == ((char)27) ) return 0; // Mostrar la imagen hasta que se presione una teclas
 
-    split(src, channels);
- 
+    
+    sColorBalance(src, out);
   
     clock_t end = clock();
     double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
@@ -70,4 +72,17 @@ static void help()
     cout << "\nThis program demonstrates a simple SLAM.\n"
             "Usage:\n"
             "./main.out <directory_name>, Default is ../data/pic1.png\n" << endl;
+}
+
+void sColorBalance(Mat input_img, Mat &output_img){
+    Mat channels[3];
+    split(input_img, channels);
+    int i = 0;
+    
+    
+    std::cout << channels[0].at<Vec>(0)<< endl;
+
+
+
+
 }
