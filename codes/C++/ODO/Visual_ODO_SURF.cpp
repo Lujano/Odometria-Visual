@@ -150,50 +150,50 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut){
   int w1, h1; // Image size
   w1 = img_1.size().width;
   h1 = img_1.size().height;
-  //-- Paso 1: detectar los puntos clave utilizando Fast Features
-  int threshold=60;
-  bool nonmaxSuppression=true;
-  int type=FastFeatureDetector::TYPE_9_16;
+  //-- Paso 1: detectar los puntos clave utilizando SIFT
+  int minHessian = 400;
 
-  Ptr< FastFeatureDetector> detector_1 = 	FastFeatureDetector::create(threshold ,nonmaxSuppression , type);
+  Ptr<SURF> detector = SURF::create( minHessian );
   
-  vector<KeyPoint> keypoints_1; // Vector para almacenar los puntos detectados con FAST
-  detector_1 -> detect( img_1, keypoints_1 );
-  //cout << "Puntos detectados = "<< keypoints_1.size()<< endl;
+  vector<KeyPoint> keypoints_1, keypoints_2; // Vector para almacenar los puntos detectados con FAST
+  Mat descriptors_1, descriptors_2;
+  detector -> detectAndCompute( img_1, Mat(), keypoints_1, descriptors_1 );
+  detector -> detectAndCompute( img_2, Mat(), keypoints_2, descriptors_2 );
 
+  FlannBasedMatcher matcher;
+  std::vector< DMatch > matches;
+  matcher.match( descriptors_1, descriptors_2, matches );
+
+
+  //cout << "Puntos detectados = "<< keypoints_1.size()<< endl;
   //-- Paso 2: Definir la region de interes (ROI)
-  vector<KeyPoint> key_points_ROT_out, key_points_TRANS_out, keypointsOK;
+  /*
   int thresholdx = 40, thresholdy = 50;
   thresholdRot(keypoints_1, thresholdx, w1, h1, key_points_ROT_out); // Puntos a considerar para la rotacion
   thresholdTrans(key_points_ROT_out, thresholdy, w1, h1,key_points_TRANS_out); // Puntos a considerar para la traslacion
-  
-  keypointsOK = key_points_TRANS_out; // Puntos resultantes bajo analisis
+  */
   //cout << "Puntos bajo analisis ="<< keypointsOK.size()<< endl;
 
-  //-- Paso 3: Calcular flujo optico entre las dos imagenes
-  Size winSize=Size(21, 21);
-  TermCriteria crit = TermCriteria(TermCriteria::COUNT+TermCriteria::EPS, 40, 0.001);
-  int maxLevel=3;
-  int flags=0;
-  double minEigThreshold=1e-3;
-  Ptr< SparsePyrLKOpticalFlow > sparse = SparsePyrLKOpticalFlow::create(winSize, maxLevel, crit, flags ,minEigThreshold );
+    //-- Draw only "good" matches (i.e. whose distance is less than 3*min_dist )
+  double max_dist = 0; double min_dist = 100;
+  std::vector< DMatch > good_matches;
+  for( int i = 0; i < descriptors_1.rows; i++ )
+  { if( matches[i].distance <= 3*min_dist )
+     { good_matches.push_back( matches[i]); }
+  }
+  Mat img_matches;
+  drawMatches( img_1, keypoints_1, img_2, keypoints_2,
+               good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
+               std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+  //-- Localize the object
+  std::vector<Point2f> points1_OK, points2_OK; // Puntos finales bajos analisis
+  for( size_t i = 0; i < good_matches.size(); i++ )
+  {
+    //-- Get the keypoints from the good matches
+    points1_OK.push_back( keypoints_1[ good_matches[i].queryIdx ].pt );
+    points2_OK.push_back( keypoints_2[ good_matches[i].trainIdx ].pt );
+  }
 
-    // Convertir formato Keypoint a Point2f
-  vector<Point2f> keypointsOK1_f, keypoints2Out_f;
-  vector<int> point_indexs;
-  cv::KeyPoint::convert(keypointsOK, keypointsOK1_f,point_indexs);
-
-    // Calcular flujo optico
-  vector<uchar> status; // 	output status vector (of unsigned chars); each element of the vector is set to 1 if the flow for
-                        //   the corresponding features has been found, otherwise, it is set to 0. 
-  vector<float> err;
-  sparse-> calc(img_1, img_2, keypointsOK1_f, keypoints2Out_f, status, err) ;
-
-    // Considerar solo parejas de puntos (status = 1)
-  vector<Point2f> points1_OK, points2_OK; // Puntos finales bajos analisis
-  checkStatus(keypointsOK1_f, status, points1_OK); // points 1 y 2 tienen mismo tamaño (igual que ...
-  checkStatus( keypoints2Out_f, status, points2_OK);  // vector status)
-  cout << "Puntos emparejados = "<< points1_OK.size()<< endl;
 
   //-- Paso 4: Calcular la matriz Esencial
     // Parametros intrisecos de la camara
@@ -214,8 +214,8 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut){
 //-- Paso 6: Draw keypoints
   Mat img_keypoints_1, img_keypoints_2, img_keypointsOK; 
 
-  drawKeypoints( img_1, keypoints_1, img_keypoints_1, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
-  drawKeypoints( img_1, keypointsOK, img_keypointsOK, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
+  
+  drawKeypoints( img_1, keypoints_1, img_keypointsOK, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
 
   imageOut = img_keypointsOK;
 
@@ -279,4 +279,5 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut){
         }
     }
 
-//   -g -o Visual_ODO.out Visual_ODO.cpp `pkg-config opencv --cflags --libs`
+//  g++ -g -o Visual_ODO_SURF.out Visual_ODO_SURF.cpp `pkg-config opencv --cflags --libs`
+// ./Visual_ODO_SURF.out ../../../../Datasets/kitti/odometry/00/image_2/
