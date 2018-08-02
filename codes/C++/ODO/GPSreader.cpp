@@ -3,17 +3,13 @@
 #include <iostream>
 #include <stdlib.h>
 #include "opencv2/core.hpp"
-#include "opencv2/core/types.hpp"
 
 using namespace std;
 using namespace cv;
 
 
-size_t split(const std::string &txt, std::vector<std::string> &strs, char ch);
-
-int main(){
+void get_gps_data(Mat &gps_odometry){
     ifstream inFile;
-    Mat gps_odometry= Mat::zeros(1, 2, CV_64F);
     Mat point = Mat::zeros(1, 2, CV_64F);
     //gps_odometry.push_back(point);
     inFile.open("00_gt.txt");
@@ -24,21 +20,20 @@ int main(){
     string x;
     while (!inFile.eof()) {
         getline(inFile, x);
-        std::vector<std::string> v;
-        split( x, v, ' ' ); // size 12
-        string a= v[2];
-        //double a = atof(v[3].c_str());
-        //cout<<v[3]<<endl;
-        //point.at<double>(0,1) =  atof(v[3].data()); //x
-        //point.at<double>(0,2) =  atof(v[3].data()); //x
-        gps_odometry.push_back(point);
-        cout<<a<<endl;
+        if (x.size()!= 0){
+            std::vector<std::string> v;
+            split( x, v, ' ' ); // size 12
+            //double a = atof(v[3].c_str());
+            //cout<<v[3]<<endl;
+            point.at<double>(0,0) =  atof(v[3].data()); //x
+            point.at<double>(0,1) =  atof(v[11].data()); //x
+            gps_odometry.push_back(point);
+        }
+      
     
 
     }
-    //cout<<gps_odometry<<endl;
     inFile.close();
-    return 0;
 }
 
 size_t split(const std::string &txt, std::vector<std::string> &strs, char ch)

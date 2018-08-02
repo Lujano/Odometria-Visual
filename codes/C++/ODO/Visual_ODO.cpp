@@ -8,7 +8,7 @@
 #include "opencv2/video/tracking.hpp"
 #include "opencv2/core/types.hpp"
 #include <opencv2/plot.hpp>
-
+#include "GPSreader.cṕp"
 using namespace cv;
 using namespace cv::xfeatures2d;
 using namespace std;
