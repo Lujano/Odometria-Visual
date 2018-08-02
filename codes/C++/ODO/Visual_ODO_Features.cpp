@@ -9,29 +9,52 @@
 #include "opencv2/core/types.hpp"
 #include <opencv2/plot.hpp>
 #include "GPSreader.cpp"
+#include <math.h>
+
 using namespace cv;
 using namespace cv::xfeatures2d;
 using namespace std;
+
+enum Detector
+{
+    USE_KAZE,
+    USE_AKAZE,
+    USE_ORB,
+    USE_SIFT,
+    USE_SURF,
+    USE_FAST
+};
+
+enum Matcher
+{
+    USE_BRUTE_FORCE,
+    USE_FLANN
+};
 namespace patch
 {
     template < typename T > std::string to_string( const T& n ) // funcion para transformar entero en string
     {
         std::ostringstream stm ;
         stm << n ;
+        if (n < 10){
+            
+            return "0000000"+stm.str();
+        }
         if (n < 100){
-            return "0000"+stm.str();
+            
+            return "000000"+stm.str();
         }
         if (n >= 100 & n<1000){
-            return "000"+stm.str();
+            return "00000"+stm.str();
         }
             
-        return "00"+stm.str() ;
+        return "0000"+stm.str() ;
     }
 }
   
 static void help();
 void readme();
-int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut);
+int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int detector, int matcher);
 void thresholdTrans(vector<KeyPoint> &points, int thresholdy, int w, int h, vector<KeyPoint>  &pointsOut); //verifica si el punto se encuentra en una ventana dada
 void thresholdRot(vector<KeyPoint> &points, int thresholdx, int w, int h, vector<KeyPoint> &pointsOut); //verifica si el punto se encuentra en una ventana dada
 void checkStatus(vector<Point2f> &points, vector<uchar> &status, vector<Point2f> &pointsOut);
@@ -54,48 +77,66 @@ cv::CommandLineParser parser(argc, argv,
     clock_t begin = clock(); // Tiempo de inicio del codigo
 
     string file_directory = parser.get<string>("@image"); // Direccion del directorio con imagenes
-    int index1_int;
+    int index1_int, index2_int;
     string index1_str, index2_str;
     Mat src, src2;
+    int first_frame = 1;
     
-    index1_int = 57 ; // Primera imagen a leer
+    index1_int = 60 ; // Primera imagen a leer
     int break_prcs =0;
 
     Mat odometry = Mat::zeros(1, 3, CV_64F); // Matriz vacia de vectores de longitud 3 (comienza con 000)
     Mat R, t; // matriz de rotacion y traslacion
-    Mat R_p = Mat::eye(Size(3, 3), CV_64F); // matriz de rotacion temporal
-    Mat traslation = Mat::zeros(3, 1, CV_64F);
+    Mat R_p ; // matriz de rotacion temporal
+    Mat traslation; 
     Mat plot_x;
     Mat plot_y;
     Mat img_fast;
-   
+    Mat ground_truth;
+    double scale;
+    get_gps_data(ground_truth, index1_int);
+  
 
-    while(index1_int < 1049){ // penultima imagen  a leer
-        index1_str = file_directory + patch::to_string(index1_int)+".png";
-        index2_str = file_directory + patch::to_string(index1_int+1)+".png";
-        src = imread(index1_str, 1); // Cargar con color, flag = 1
-        src2 = imread(index2_str, 1);
+    
+    while(index1_int < 4539){ // penultima imagen  a leer
+        index1_str = file_directory + "camera_left.image_raw_"+ patch::to_string(index1_int)+".pgm";
+        index2_int = index1_int+1;
+        index2_str = file_directory +"camera_left.image_raw_"+ patch::to_string(index2_int)+".pgm";
+        src = imread(index1_str,0); // Cargar con color, flag = 1
+        src2 = imread(index2_str, 0);
 
-        while ( src2.empty() & index1_int < 1049) // En caso de lectura de una imagen no existe
+        while ( src2.empty() & index1_int < 4539) // En caso de lectura de una imagen no existe
          {
             index1_int = index1_int+1;// Saltar a la siguiente imagen
-            cout<< "Imagen no encontrada:"<< index1_int<< endl;
-            index2_str = file_directory + patch::to_string(index1_int+1)+".png";
-            src2 = imread(index2_str, 1);
+            cout<< "Imagen no encontrada:"<<patch::to_string(index1_int)+".pgm"<< endl;
+            index2_int = index1_int+1;
+            index2_str = file_directory + "camera_left.image_raw_"+patch::to_string(index2_int)+".pgm";
+            src2 = imread(index2_str, 0);
         }
         Mat gray1, gray2;
-        cvtColor(src, gray1, CV_BGR2GRAY);
-        cvtColor(src2, gray2, CV_BGR2GRAY);
-        break_prcs = Odometry(src, src2, R, t, img_fast);
+        //cvtColor(src, gray1, CV_BGR2GRAY);
+        //cvtColor(src2, gray2, CV_BGR2GRAY);
+        break_prcs = Odometry(src, src2, R, t, img_fast, USE_SURF, USE_FLANN);
         if (break_prcs == 1)
          break; // Mostrar la imagen hasta que se presione una teclas
         //odometry.push_back(despl)
         //cout<< "Matrix R="<< R<<endl;
         //cout<< "Matrix t="<< t<<endl;
-        traslation = traslation +R_p*t;
+        double desp_x = ground_truth.at<double>(index2_int,0)-ground_truth.at<double>(index1_int,0);
+        double desp_y = ground_truth.at<double>(index2_int,1)-ground_truth.at<double>(index1_int,1);
+        if (first_frame == 1){
+            traslation = Mat::zeros(3, 1, CV_64F);
+            R_p = Mat::eye(Size(3, 3), CV_64F);
+            first_frame = 0;
+        }
+        scale = sqrt(pow(desp_x,2)+pow(desp_y,2 ));
+        traslation = traslation +R_p*t*scale;
         R_p = R*R_p;
-        odometry.push_back(traslation.t());
         
+        odometry.push_back(traslation.t());
+        plot_x.push_back(ground_truth.at<double>(index1_int,0));
+        plot_y.push_back(ground_truth.at<double>(index2_int,1));
+
         plot_x.push_back(traslation.row(0));
         plot_y.push_back(traslation.row(2));
         double min_x, max_x, min_y, max_y;
@@ -129,6 +170,7 @@ cv::CommandLineParser parser(argc, argv,
         index1_int ++; // Siguiente par de imagenes
        
     }
+    
 
     FileStorage file1("Output_fast.yaml", FileStorage::WRITE); // Archivo para guardar el desplazamiento 
     file1 << "Trayectoria"<< odometry;
@@ -146,64 +188,116 @@ static void help()
             "Usage:\n"
             "./main.out <directory_name>, Default is ../data/pic1.png\n" << endl;
 }
-int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut){
+int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int _detector, int _matcher){
   int w1, h1; // Image size
   w1 = img_1.size().width;
   h1 = img_1.size().height;
-  //-- Paso 1: detectar los puntos clave utilizando Fast Features
-  int threshold=60;
-  bool nonmaxSuppression=true;
-  int type=FastFeatureDetector::TYPE_9_16;
+  //-- Paso 1: detectar los puntos clave utilizando SIFT
+  Ptr<Feature2D> detector;                    //!< Pointer to OpenCV feature extractor
+  Ptr<DescriptorMatcher> matcher; //!< Pointer to OpenCV feature Matcher
+  int minHessian = 400;
+    switch (_detector)
+    {
+    case USE_KAZE:
+    {
+        detector = KAZE::create();
+        break;
+    }
+    case USE_AKAZE:
+    {
+        detector = AKAZE::create();
+        break;
+    }
+    case USE_SIFT:
+    {
+        detector = SIFT::create();
+        break;
+    }
+    case USE_SURF:
+    {
+        detector = SURF::create(400);
+        break;
+    }
+    case USE_ORB:
+    {
+        detector = ORB::create();
+        break;
+    }
+    default:
+    {
+        detector = KAZE::create();
+        break;
+    }
+    }
 
-  Ptr< FastFeatureDetector> detector_1 = 	FastFeatureDetector::create(threshold ,nonmaxSuppression , type);
-  
-  vector<KeyPoint> keypoints_1; // Vector para almacenar los puntos detectados con FAST
-  detector_1 -> detect( img_1, keypoints_1 );
+    // select input matcher
+    switch (_matcher)
+    {
+    case USE_BRUTE_FORCE:
+    {
+        matcher = BFMatcher::create();
+        break;
+    }
+    case USE_FLANN:
+    {
+        matcher = FlannBasedMatcher::create();
+        break;
+    }
+    default:
+    {
+        matcher = FlannBasedMatcher::create();
+        break;
+    }
+    }
+
+  vector<KeyPoint> keypoints_1, keypoints_2; // Vector para almacenar los puntos detectados con FAST
+  Mat descriptors_1, descriptors_2;
+  detector -> detectAndCompute( img_1, Mat(), keypoints_1, descriptors_1 );
+  detector -> detectAndCompute( img_2, Mat(), keypoints_2, descriptors_2 );
+
+  vector< vector<DMatch> > matches; // Cambio
+  matcher-> knnMatch( descriptors_1, descriptors_2, matches, 2 );
+  double nn_match_ratio = 0.8f; // Nearest-neighbour matching ratio
+  vector<KeyPoint> matched1, matched2;
+  for(unsigned i = 0; i < matches.size(); i++) {
+      if(matches[i][0].distance < nn_match_ratio * matches[i][1].distance) {
+          matched1.push_back(keypoints_1[matches[i][0].queryIdx]);
+          matched2.push_back(keypoints_2[matches[i][0].trainIdx]);
+      }
+  }
   //cout << "Puntos detectados = "<< keypoints_1.size()<< endl;
-
   //-- Paso 2: Definir la region de interes (ROI)
-  vector<KeyPoint> key_points_ROT_out, key_points_TRANS_out, keypointsOK;
+  /*
   int thresholdx = 40, thresholdy = 50;
   thresholdRot(keypoints_1, thresholdx, w1, h1, key_points_ROT_out); // Puntos a considerar para la rotacion
   thresholdTrans(key_points_ROT_out, thresholdy, w1, h1,key_points_TRANS_out); // Puntos a considerar para la traslacion
-  
-  keypointsOK = key_points_TRANS_out; // Puntos resultantes bajo analisis
+  */
   //cout << "Puntos bajo analisis ="<< keypointsOK.size()<< endl;
 
-  //-- Paso 3: Calcular flujo optico entre las dos imagenes
-  Size winSize=Size(21, 21);
-  TermCriteria crit = TermCriteria(TermCriteria::COUNT+TermCriteria::EPS, 40, 0.001);
-  int maxLevel=3;
-  int flags=0;
-  double minEigThreshold=1e-3;
-  Ptr< SparsePyrLKOpticalFlow > sparse = SparsePyrLKOpticalFlow::create(winSize, maxLevel, crit, flags ,minEigThreshold );
 
-    // Convertir formato Keypoint a Point2f
-  vector<Point2f> keypointsOK1_f, keypoints2Out_f;
-  vector<int> point_indexs;
-  cv::KeyPoint::convert(keypointsOK, keypointsOK1_f,point_indexs);
-
-    // Calcular flujo optico
-  vector<uchar> status; // 	output status vector (of unsigned chars); each element of the vector is set to 1 if the flow for
-                        //   the corresponding features has been found, otherwise, it is set to 0. 
-  vector<float> err;
-  sparse-> calc(img_1, img_2, keypointsOK1_f, keypoints2Out_f, status, err) ;
-
-    // Considerar solo parejas de puntos (status = 1)
-  vector<Point2f> points1_OK, points2_OK; // Puntos finales bajos analisis
-  checkStatus(keypointsOK1_f, status, points1_OK); // points 1 y 2 tienen mismo tamaño (igual que ...
-  checkStatus( keypoints2Out_f, status, points2_OK);  // vector status)
-  cout << "Puntos emparejados = "<< points1_OK.size()<< endl;
 
   //-- Paso 4: Calcular la matriz Esencial
     // Parametros intrisecos de la camara
   double fx, fy, focal, cx, cy;
+  fx = 9.842439e+02;
+  fy = 9.808141e+02;
+  cx =  6.900000e+02;
+  cy =  2.331966e+02;
+  /*
   fx = 7.188560000000e+02;
+
   fy = 7.188560000000e+02;
   cx =  6.071928000000e+02;
   cy =  1.852157000000e+02;
+  */
   focal = fx;
   Mat E; // matriz esencial
+
+  std::vector<Point2f> points1_OK, points2_OK; // Puntos finales bajos analisis
+  vector<int> point_indexs;
+  cv::KeyPoint::convert(matched1, points1_OK,point_indexs);
+  cv::KeyPoint::convert(matched2, points2_OK,point_indexs);
+
   E = findEssentialMat(points1_OK, points2_OK, focal, Point2d(cx, cy), RANSAC, 0.999, 1.0, noArray());
 
   //--Paso 5: Calcular la matriz de rotación y traslación de puntos entre imagenes 
@@ -214,8 +308,8 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut){
 //-- Paso 6: Draw keypoints
   Mat img_keypoints_1, img_keypoints_2, img_keypointsOK; 
 
-  drawKeypoints( img_1, keypoints_1, img_keypoints_1, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
-  drawKeypoints( img_1, keypointsOK, img_keypointsOK, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
+  
+  drawKeypoints( img_1, keypoints_1, img_keypointsOK, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
 
   imageOut = img_keypointsOK;
 
@@ -279,4 +373,8 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut){
         }
     }
 
-//   -g -o Visual_ODO.out Visual_ODO.cpp `pkg-config opencv --cflags --libs`
+//  g++ -g -o Visual_ODO_Features.out Visual_ODO_Features.cpp `pkg-config opencv --cflags --libs`
+// ./Visual_ODO_Features.out ../../../../../../../media/victor/CAB21993B219855B/Datasets/00/
+
+// https://gitlab.com/srrg-software/srrg_proslam/tree/master
+// https://stackoverflow.com/questions/29407474/how-to-understand-kitti-camera-calibration-files

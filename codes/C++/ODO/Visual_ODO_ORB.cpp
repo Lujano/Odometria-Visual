@@ -8,7 +8,8 @@
 #include "opencv2/video/tracking.hpp"
 #include "opencv2/core/types.hpp"
 #include <opencv2/plot.hpp>
-#include "GPSreader.cṕp"
+#include "GPSreader.cpp"
+#include <math.h>
 
 using namespace cv;
 using namespace cv::xfeatures2d;
@@ -21,17 +22,17 @@ namespace patch
         stm << n ;
         if (n < 10){
             
-            return "000000000"+stm.str();
+            return "0000000"+stm.str();
         }
         if (n < 100){
             
-            return "00000000"+stm.str();
+            return "000000"+stm.str();
         }
         if (n >= 100 & n<1000){
-            return "0000000"+stm.str();
+            return "00000"+stm.str();
         }
             
-        return "000000"+stm.str() ;
+        return "0000"+stm.str() ;
     }
 }
   
@@ -60,34 +61,41 @@ cv::CommandLineParser parser(argc, argv,
     clock_t begin = clock(); // Tiempo de inicio del codigo
 
     string file_directory = parser.get<string>("@image"); // Direccion del directorio con imagenes
-    int index1_int;
+    int index1_int, index2_int;
     string index1_str, index2_str;
     Mat src, src2;
+    int first_frame = 1;
     
-    index1_int = 0 ; // Primera imagen a leer
+    index1_int = 60 ; // Primera imagen a leer
     int break_prcs =0;
 
     Mat odometry = Mat::zeros(1, 3, CV_64F); // Matriz vacia de vectores de longitud 3 (comienza con 000)
     Mat R, t; // matriz de rotacion y traslacion
-    Mat R_p = Mat::eye(Size(3, 3), CV_64F); // matriz de rotacion temporal
-    Mat traslation = Mat::zeros(3, 1, CV_64F);
+    Mat R_p ; // matriz de rotacion temporal
+    Mat traslation; 
     Mat plot_x;
     Mat plot_y;
     Mat img_fast;
-   
+    Mat ground_truth;
+    double scale;
+    get_gps_data(ground_truth, index1_int);
+  
 
-    while(index1_int < 568){ // penultima imagen  a leer
-        index1_str = file_directory + patch::to_string(index1_int)+".png";
-        index2_str = file_directory + patch::to_string(index1_int+1)+".png";
-        src = imread(index1_str, 0); // Cargar con color, flag = 1
+    
+    while(index1_int < 4539){ // penultima imagen  a leer
+        index1_str = file_directory + "camera_left.image_raw_"+ patch::to_string(index1_int)+".pgm";
+        index2_int = index1_int+1;
+        index2_str = file_directory +"camera_left.image_raw_"+ patch::to_string(index2_int)+".pgm";
+        src = imread(index1_str,0); // Cargar con color, flag = 1
         src2 = imread(index2_str, 0);
 
-        while ( src2.empty() & index1_int < 568) // En caso de lectura de una imagen no existe
+        while ( src2.empty() & index1_int < 4539) // En caso de lectura de una imagen no existe
          {
             index1_int = index1_int+1;// Saltar a la siguiente imagen
-            cout<< "Imagen no encontrada:"<<patch::to_string(index1_int)+".png"<< endl;
-            index2_str = file_directory + patch::to_string(index1_int+1)+".png";
-            src2 = imread(index2_str, 1);
+            cout<< "Imagen no encontrada:"<<patch::to_string(index1_int)+".pgm"<< endl;
+            index2_int = index1_int+1;
+            index2_str = file_directory + "camera_left.image_raw_"+patch::to_string(index2_int)+".pgm";
+            src2 = imread(index2_str, 0);
         }
         Mat gray1, gray2;
         //cvtColor(src, gray1, CV_BGR2GRAY);
@@ -98,10 +106,21 @@ cv::CommandLineParser parser(argc, argv,
         //odometry.push_back(despl)
         //cout<< "Matrix R="<< R<<endl;
         //cout<< "Matrix t="<< t<<endl;
-        traslation = traslation +R_p*t;
+        double desp_x = ground_truth.at<double>(index2_int,0)-ground_truth.at<double>(index1_int,0);
+        double desp_y = ground_truth.at<double>(index2_int,1)-ground_truth.at<double>(index1_int,1);
+        if (first_frame == 1){
+            traslation = Mat::zeros(3, 1, CV_64F);
+            R_p = Mat::eye(Size(3, 3), CV_64F);
+            first_frame = 0;
+        }
+        scale = sqrt(pow(desp_x,2)+pow(desp_y,2 ));
+        traslation = traslation +R_p*t*scale;
         R_p = R*R_p;
-        odometry.push_back(traslation.t());
         
+        odometry.push_back(traslation.t());
+        plot_x.push_back(ground_truth.at<double>(index1_int,0));
+        plot_y.push_back(ground_truth.at<double>(index2_int,1));
+
         plot_x.push_back(traslation.row(0));
         plot_y.push_back(traslation.row(2));
         double min_x, max_x, min_y, max_y;
@@ -135,6 +154,7 @@ cv::CommandLineParser parser(argc, argv,
         index1_int ++; // Siguiente par de imagenes
        
     }
+    
 
     FileStorage file1("Output_fast.yaml", FileStorage::WRITE); // Archivo para guardar el desplazamiento 
     file1 << "Trayectoria"<< odometry;
@@ -159,7 +179,7 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut){
   //-- Paso 1: detectar los puntos clave utilizando SIFT
   int minHessian = 400;
 
-  Ptr<ORB> detector = ORB::create();
+  Ptr<AKAZE> detector = AKAZE::create();
   Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-Hamming");
 
   vector<KeyPoint> keypoints_1, keypoints_2; // Vector para almacenar los puntos detectados con FAST
@@ -286,6 +306,6 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut){
     }
 
 //  g++ -g -o Visual_ODO_ORB.out Visual_ODO_ORB.cpp `pkg-config opencv --cflags --libs`
-// ./Visual_ODO_ORB.out ../../../../Datasets/kitti/odometry/00/image_2/
+// ./Visual_ODO_ORB.out ../../../../../../../media/victor/CAB21993B219855B/Odometry/00/00.txt.d/
 // https://gitlab.com/srrg-software/srrg_proslam/tree/master
 // https://stackoverflow.com/questions/29407474/how-to-understand-kitti-camera-calibration-files
