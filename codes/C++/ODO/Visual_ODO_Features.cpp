@@ -30,6 +30,7 @@ enum Matcher
     USE_BRUTE_FORCE,
     USE_FLANN
 };
+
 namespace patch
 {
     template < typename T > std::string to_string( const T& n ) // funcion para transformar entero en string
@@ -58,15 +59,20 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int detector, 
 void thresholdTrans(vector<KeyPoint> &points, int thresholdy, int w, int h, vector<KeyPoint>  &pointsOut); //verifica si el punto se encuentra en una ventana dada
 void thresholdRot(vector<KeyPoint> &points, int thresholdx, int w, int h, vector<KeyPoint> &pointsOut); //verifica si el punto se encuentra en una ventana dada
 void checkStatus(vector<Point2f> &points, vector<uchar> &status, vector<Point2f> &pointsOut);
+void get_matcher(int _matcher);
+void get_detector(int _detector);
 
-
-
+Ptr<Feature2D> detector;                    //!< Pointer to OpenCV feature extractor
+Ptr<DescriptorMatcher> matcher; //!< Pointer to OpenCV feature Matcher
 /** @function main */
 int main( int argc, char** argv )
 {
-cv::CommandLineParser parser(argc, argv,
-        "{help h||}{@image|../data/pic1.png|}"
-    );
+const String keys =
+    "{help h usage ? |      | print this message   }"
+    "{@directory     |      | data input directory "
+    "{@detector      |      | image2 for compare   }"
+    "{@repeat        |1     | number               }";
+cv::CommandLineParser parser(argc, argv, keys);
     if (parser.has("help"))
     {
         help();
@@ -76,7 +82,9 @@ cv::CommandLineParser parser(argc, argv,
 
     clock_t begin = clock(); // Tiempo de inicio del codigo
 
-    string file_directory = parser.get<string>("@image"); // Direccion del directorio con imagenes
+    string file_directory = parser.get<string>("@directory"); // Direccion del directorio con imagenes
+    string _detector = parser.get<string>("@detector");
+    string _matcher = parser.get<string>("@matcher");
     int index1_int, index2_int;
     string index1_str, index2_str;
     Mat src, src2;
@@ -193,63 +201,9 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int _detector,
   w1 = img_1.size().width;
   h1 = img_1.size().height;
   //-- Paso 1: detectar los puntos clave utilizando SIFT
-  Ptr<Feature2D> detector;                    //!< Pointer to OpenCV feature extractor
-  Ptr<DescriptorMatcher> matcher; //!< Pointer to OpenCV feature Matcher
-  int minHessian = 400;
-    switch (_detector)
-    {
-    case USE_KAZE:
-    {
-        detector = KAZE::create();
-        break;
-    }
-    case USE_AKAZE:
-    {
-        detector = AKAZE::create();
-        break;
-    }
-    case USE_SIFT:
-    {
-        detector = SIFT::create();
-        break;
-    }
-    case USE_SURF:
-    {
-        detector = SURF::create(400);
-        break;
-    }
-    case USE_ORB:
-    {
-        detector = ORB::create();
-        break;
-    }
-    default:
-    {
-        detector = KAZE::create();
-        break;
-    }
-    }
+  
 
-    // select input matcher
-    switch (_matcher)
-    {
-    case USE_BRUTE_FORCE:
-    {
-        matcher = BFMatcher::create();
-        break;
-    }
-    case USE_FLANN:
-    {
-        matcher = FlannBasedMatcher::create();
-        break;
-    }
-    default:
-    {
-        matcher = FlannBasedMatcher::create();
-        break;
-    }
-    }
-
+    
   vector<KeyPoint> keypoints_1, keypoints_2; // Vector para almacenar los puntos detectados con FAST
   Mat descriptors_1, descriptors_2;
   detector -> detectAndCompute( img_1, Mat(), keypoints_1, descriptors_1 );
@@ -373,6 +327,62 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int _detector,
         }
     }
 
+    void get_matcher(int _matcher){
+    // select input matcher
+        switch (_matcher)
+        {
+        case "USE_BRUTE_FORCE":
+        {
+            matcher = BFMatcher::create();
+            break;
+        }
+        case "USE_FLANN":
+        {
+            matcher = FlannBasedMatcher::create();
+            break;
+        }
+        default:
+        {
+            matcher = FlannBasedMatcher::create();
+            break;
+        }
+        }
+        }
+    void get_detector(int _detector){
+        switch (_detector)
+            {
+            case "USE_KAZE":
+            {
+                detector = KAZE::create();
+                break;
+            }
+            case "USE_AKAZE":
+            {
+                detector = AKAZE::create();
+                break;
+            }
+            case "USE_SIFT":
+            {
+                detector = SIFT::create();
+                break;
+            }
+            case "USE_SURF":
+            {
+                detector = SURF::create(400);
+                break;
+            }
+            case "USE_ORB":
+            {
+                detector = ORB::create();
+                break;
+            }
+            default:
+            {
+                detector = KAZE::create();
+                break;
+            }
+            }
+    }
 //  g++ -g -o Visual_ODO_Features.out Visual_ODO_Features.cpp `pkg-config opencv --cflags --libs`
 // ./Visual_ODO_Features.out ../../../../../../../media/victor/CAB21993B219855B/Datasets/00/
 
