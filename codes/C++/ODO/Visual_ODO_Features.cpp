@@ -55,7 +55,7 @@ namespace patch
   
 static void help();
 void readme();
-int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int detector, int matcher);
+int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int detector, int matcher, double *Npoints);
 void thresholdTrans(vector<KeyPoint> &points, int thresholdy, int w, int h, vector<KeyPoint>  &pointsOut); //verifica si el punto se encuentra en una ventana dada
 void thresholdRot(vector<KeyPoint> &points, int thresholdx, int w, int h, vector<KeyPoint> &pointsOut); //verifica si el punto se encuentra en una ventana dada
 void checkStatus(vector<Point2f> &points, vector<uchar> &status, vector<Point2f> &pointsOut);
@@ -82,7 +82,7 @@ cv::CommandLineParser parser(argc, argv, keys);
     }
 
 
-    clock_t begin = clock(); // Tiempo de inicio del codigo
+    
 
     string file_directory = parser.get<string>("directory"); // Direccion del directorio con imagenes
     int _detector = parser.get<int>("detector");
@@ -91,12 +91,18 @@ cv::CommandLineParser parser(argc, argv, keys);
     string index1_str, index2_str;
     Mat src, src2;
     int first_frame = 1;
+    int first_frame_int = parser.get<int>("first_frame");// Primera imagen a leer
     
-    index1_int =  parser.get<int>("first_frame"); ; // Primera imagen a leer
+    index1_int = first_frame_int; // Primera imagen a leer
     int index_last_int =  parser.get<int>("last_frame");; //Ultima imagen a leer
     int break_prcs =0;
 
-    Mat odometry = Mat::zeros(1, 3, CV_64F); // Matriz vacia de vectores de longitud 3 (comienza con 000)
+    Mat odov; // Matriz vacia de vectores de longitud 2 (comienza con 00)
+    Mat gps;
+    Mat error;
+    Mat point_odov = Mat::zeros(Size(1, 2), CV_64F);
+    Mat point_gps = Mat::zeros(Size(1, 2), CV_64F);
+    Mat point_error = Mat::zeros(Size(1, 2), CV_64F);
     Mat R, t; // matriz de rotacion y traslacion
     Mat R_p ; // matriz de rotacion temporal
     Mat traslation; 
@@ -109,8 +115,17 @@ cv::CommandLineParser parser(argc, argv, keys);
     get_matcher(_matcher);
     get_detector(_detector);
 
-    
+    double error_sum = 0;
+    double FPS_sum = 0;
+    double FPS_mean = 0;
+    double Npoints = 0;
+    double Npoints_sum = 0;
+    double Npoints_mean = 0;
+    double Dist_recorrida = 0;
+
+    Mat Data_test = Mat::zeros(Size(1, 8), CV_64F); //detector, descriptor, first_frame, last_frame, Dist_recorrida, Drift, FPS_mean, Nro de  puntos mean
     while(index1_int < index_last_int){ // penultima imagen  a leer
+        clock_t begin = clock(); // Tiempo de inicio del codigo
         index1_str = file_directory + "camera_left.image_raw_"+ patch::to_string(index1_int)+".pgm";
         index2_int = index1_int+1;
         index2_str = file_directory +"camera_left.image_raw_"+ patch::to_string(index2_int)+".pgm";
@@ -125,12 +140,18 @@ cv::CommandLineParser parser(argc, argv, keys);
             index2_str = file_directory + "camera_left.image_raw_"+patch::to_string(index2_int)+".pgm";
             src2 = imread(index2_str, 0);
         }
-        Mat gray1, gray2;
+        //Mat gray1, gray2;
         //cvtColor(src, gray1, CV_BGR2GRAY);
         //cvtColor(src2, gray2, CV_BGR2GRAY);
-        break_prcs = Odometry(src, src2, R, t, img_fast, USE_SURF, USE_FLANN);
-        if (break_prcs == 1)
-         break; // Mostrar la imagen hasta que se presione una teclas
+
+        // ODOV
+        break_prcs = Odometry(src, src2, R, t, img_fast, USE_SURF, USE_FLANN, &Npoints);
+        clock_t end = clock();
+        double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+        FPS_sum = (FPS_sum+1.0/elapsed_secs);
+        Npoints_sum = Npoints_sum+Npoints;
+       
+
         //odometry.push_back(despl)
         //cout<< "Matrix R="<< R<<endl;
         //cout<< "Matrix t="<< t<<endl;
@@ -156,30 +177,32 @@ cv::CommandLineParser parser(argc, argv, keys);
              R_p = Mat::zeros(3, 3, CV_64F);
              
              R_p.at<double>(0,0) = dot_product;
-             R_p.at<double>(0,1) = -cross_product;
+             R_p.at<double>(0,2) = -cross_product;
              R_p.at<double>(2,0) = cross_product; // Error de años porq la componente y esta en la 3 fila :/
-             R_p.at<double>(2,1) = dot_product;
+             R_p.at<double>(2,2) = dot_product;
              R_p.at<double>(1,2) = 1;
              
-            R_p = Mat::eye(3, 3, CV_64F);
+            //R_p = Mat::eye(3, 3, CV_64F);
              
             /*
-            R_p.at<double>(0,0) = 1/sqrt(2);
+            R_p.at<double>(0,2) = 1/sqrt(2);
              R_p.at<double>(0,1) = -1/sqrt(2);
              R_p.at<double>(2,0) =  1/sqrt(2);
-             R_p.at<double>(2,1) = 1/sqrt(2);;
-             R_p.at<double>(1,2) = 1;
-             
-            
+             R_p.at<double>(2,2) = 1/sqrt(2);;
+             R_p.at<double>(1,1) = 1;
+             */
+            /*
             Mat v_matrix=  Mat::zeros(3, 3, CV_64F);
             v_matrix.at<double>(0,1) = v3;
             v_matrix.at<double>(1,0) = -v3;
             R_p = (Mat::eye(Size(3, 3), CV_64F))+v_matrix+(v_matrix*v_matrix)*1.0/(1.0+dot_product);
             */
             traslation = Mat::zeros(3, 1, CV_64F);
+            /*
             cout <<R_p<<endl;
             cout << "Vertor_GPS"<<vector_gps<<endl;
             cout << "Vector ODOV"<<vector_odov<<endl;
+            */
             first_frame = 0;
         }
         else{
@@ -188,19 +211,34 @@ cv::CommandLineParser parser(argc, argv, keys);
             t.at<double>(0,0) = 1;
             R = Mat::eye(Size(3, 3), CV_64F);
             */
+            //cout << "R ="<<R<<endl;
             scale = sqrt(pow(desp_x,2)+pow(desp_y,2 ));
-            cout << "scala"<<scale<<endl;
             traslation = traslation +R_p*t*scale;
             R_p = R*R_p;
             
         }
+        // PUSH Results
+        point_odov.at<double>(0,0) = traslation.at<double>(0,0); //x
+        point_odov.at<double>(0,1) = traslation.at<double>(0,2); //y
         
-        odometry.push_back(traslation.t());
-        //plot_x.push_back(ground_truth.at<double>(index1_int,0));
-        //plot_y.push_back(ground_truth.at<double>(index2_int,1));
-        cout<<"Translation"<<traslation<<endl;
+        point_gps.at<double>(0,0) = ground_truth.at<double>(index1_int,0); //x
+        point_gps.at<double>(0,1) = ground_truth.at<double>(index1_int,1); //y
+
+        point_error.at<double>(0,0) = sqrt(pow(point_odov.at<double>(0,0)-point_gps.at<double>(0,0),2)+pow(point_odov.at<double>(0,1)-point_gps.at<double>(0,1), 2 )); // error de distancia
+        error_sum = error_sum+point_error.at<double>(0,0);
+        point_error.at<double>(0,1) = 0; // error de orientacion
+
+        odov.push_back(point_odov);
+        gps.push_back(point_gps);
+        error.push_back(point_error);
+
+        plot_x.push_back(ground_truth.at<double>(index1_int,0));
+        plot_y.push_back(ground_truth.at<double>(index2_int,1));
+        //cout<<"Translation"<<traslation<<endl;
         plot_x.push_back(traslation.row(0));
         plot_y.push_back(traslation.row(2)); // Y es la tercera fila
+
+        // Plot data
         double min_x, max_x, min_y, max_y;
         minMaxLoc(plot_x, &min_x, &max_x);
         minMaxLoc(plot_y, &min_y, &max_y);
@@ -214,7 +252,19 @@ cv::CommandLineParser parser(argc, argv, keys);
         plot->setMaxX (max_x+10);
         plot->setMinX (min_x-10);
         plot->render( plot_result );
-        cout<<"Nro imagenes procesadas = "<<plot_x.rows/2<<endl;
+        
+        FPS_mean = FPS_sum/(plot_x.rows/2.0);
+        Npoints_mean = Npoints_sum/(plot_x.rows/2.0);
+        Dist_recorrida = Dist_recorrida+scale;
+        cout << "Distancia recorrida = "<<Dist_recorrida<< " m"<<endl;
+        cout << "FPS promedio = "<< FPS_mean << endl;
+        cout << "Drift = "<< error_sum<< " m"<<endl;
+        cout <<"Nro puntos promedio = "<<Npoints_mean<<endl;
+        cout <<"Nro imagenes procesadas = "<<plot_x.rows/2<<endl;
+        cout<<endl;
+         // Operaciones 
+           
+        
 
           //imshow("Puntos detectados FAST-1", img_keypoints_1 );
          
@@ -225,23 +275,35 @@ cv::CommandLineParser parser(argc, argv, keys);
         resize(plot_result,img_res2, Size(640, 300));//resize image
         Mat img_win;
         vconcat(img_res1, img_res2, img_win);
-        imshow( "Fast", img_win);
-        imwrite( "Ouput_ODO_"+patch::to_string(_detector)+"_"+patch::to_string(_matcher)+".jpg", img_win);
-        cout<<"Render"<<endl;
+        imshow( "ODOMETRIA VISUAL by LUJANO", img_win);
+        
         
         //cout<< "Traslation" << traslation<< endl;
 
         //cout<< "Indice =" << index1_int<< endl; 
+         if (break_prcs == 1)
+            break; // Mostrar la imagen hasta que se presione una teclas
         index1_int ++; // Siguiente par de imagenes
+            
        
     }
-    
+    imwrite( "Ouput_ODOV_"+patch::to_string(_detector)+"_"+patch::to_string(_matcher)+".jpg", img_win);
+    Data_test.at<double>(0,0) = double(_detector);
+    Data_test.at<double>(0,1) = double(_matcher); 
+    Data_test.at<double>(0,2) = double(first_frame_int);
+    Data_test.at<double>(0,3) = double(index2_int); // last_frame
+    Data_test.at<double>(0,4) = Dist_recorrida;
+    Data_test.at<double>(0,5) = error_sum;
+    Data_test.at<double>(0,6) = FPS_mean;
+    Data_test.at<double>(0,7) = Npoints_mean;
 
-    FileStorage file1("Output_fast.yaml", FileStorage::WRITE); // Archivo para guardar el desplazamiento 
-    file1 << "Trayectoria"<< odometry;
-    clock_t end = clock();
-    double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-    cout << "elapsed time = "<< elapsed_secs << endl;
+
+    FileStorage file1("Output_ODOV_"+patch::to_string(_detector)+"_"+patch::to_string(_matcher)+".yaml", FileStorage::WRITE); // Archivo para guardar el desplazamiento 
+    file1 << "Trayectoria_ODOV"<< odov;
+    file1 << "Trayectoria_GPS"<< gps;
+    file1 << "Trayectoria_ERROR"<< error;
+    file1 << "Data_test"<< Data_test;
+    
     return 0;
 }
 
@@ -253,7 +315,7 @@ static void help()
             "Usage:\n"
             "./main.out <directory_name>, Default is ../data/pic1.png\n" << endl;
 }
-int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int _detector, int _matcher){
+int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int _detector, int _matcher, double *Npoints){
   int w1, h1; // Image size
   w1 = img_1.size().width;
   h1 = img_1.size().height;
@@ -308,9 +370,10 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int _detector,
 
   cv::KeyPoint::convert(matched1, points1_OK,point_indexs);
   cv::KeyPoint::convert(matched2, points2_OK,point_indexs);
-
+   *Npoints = double(points1_OK.size());
+    
   E = findEssentialMat(points1_OK, points2_OK, focal, Point2d(cx, cy), RANSAC, 0.999, 1.0, noArray());
-
+ 
   //--Paso 5: Calcular la matriz de rotación y traslación de puntos entre imagenes 
    int p;
    p = recoverPose(E, points1_OK, points2_OK, R, t, focal, Point2d(cx, cy), noArray()   );

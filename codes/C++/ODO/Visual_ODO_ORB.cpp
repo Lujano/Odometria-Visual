@@ -157,7 +157,8 @@ cv::CommandLineParser parser(argc, argv,
     
 
     FileStorage file1("Output_fast.yaml", FileStorage::WRITE); // Archivo para guardar el desplazamiento 
-    file1 << "Trayectoria"<< odometry;
+    file1 << "Trayectoria_ODOV"<< odometry;
+    
     clock_t end = clock();
     double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
     cout << "elapsed time = "<< elapsed_secs << endl;
