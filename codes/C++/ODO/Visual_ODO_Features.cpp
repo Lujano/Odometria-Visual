@@ -69,9 +69,11 @@ int main( int argc, char** argv )
 {
 const String keys =
     "{help h usage ? |      | print this message   }"
-    "{@directory     |      | data input directory "
-    "{@detector      |      | image2 for compare   }"
-    "{@repeat        |1     | number               }";
+    "{directory     |      | data input directory} "
+    "{detector      |      | detector to use  }"
+    "{matcher       |       | matcher to use   }"
+    "{first_frame      |      | first_frame index  }"
+    "{last_frame      |      | first_frame index  }";
 cv::CommandLineParser parser(argc, argv, keys);
     if (parser.has("help"))
     {
@@ -82,15 +84,16 @@ cv::CommandLineParser parser(argc, argv, keys);
 
     clock_t begin = clock(); // Tiempo de inicio del codigo
 
-    string file_directory = parser.get<string>("@directory"); // Direccion del directorio con imagenes
-    string _detector = parser.get<string>("@detector");
-    string _matcher = parser.get<string>("@matcher");
+    string file_directory = parser.get<string>("directory"); // Direccion del directorio con imagenes
+    int _detector = parser.get<int>("detector");
+    int _matcher = parser.get<int>("matcher");
     int index1_int, index2_int;
     string index1_str, index2_str;
     Mat src, src2;
     int first_frame = 1;
     
-    index1_int = 60 ; // Primera imagen a leer
+    index1_int =  parser.get<int>("first_frame"); ; // Primera imagen a leer
+    int index_last_int =  parser.get<int>("last_frame");; //Ultima imagen a leer
     int break_prcs =0;
 
     Mat odometry = Mat::zeros(1, 3, CV_64F); // Matriz vacia de vectores de longitud 3 (comienza con 000)
@@ -103,17 +106,18 @@ cv::CommandLineParser parser(argc, argv, keys);
     Mat ground_truth;
     double scale;
     get_gps_data(ground_truth, index1_int);
-  
+    get_matcher(_matcher);
+    get_detector(_detector);
 
     
-    while(index1_int < 4539){ // penultima imagen  a leer
+    while(index1_int < index_last_int){ // penultima imagen  a leer
         index1_str = file_directory + "camera_left.image_raw_"+ patch::to_string(index1_int)+".pgm";
         index2_int = index1_int+1;
         index2_str = file_directory +"camera_left.image_raw_"+ patch::to_string(index2_int)+".pgm";
         src = imread(index1_str,0); // Cargar con color, flag = 1
         src2 = imread(index2_str, 0);
 
-        while ( src2.empty() & index1_int < 4539) // En caso de lectura de una imagen no existe
+        while ( src2.empty() & index1_int < index_last_int) // En caso de lectura de una imagen no existe
          {
             index1_int = index1_int+1;// Saltar a la siguiente imagen
             cout<< "Imagen no encontrada:"<<patch::to_string(index1_int)+".pgm"<< endl;
@@ -137,9 +141,12 @@ cv::CommandLineParser parser(argc, argv, keys);
             R_p = Mat::eye(Size(3, 3), CV_64F);
             first_frame = 0;
         }
-        scale = sqrt(pow(desp_x,2)+pow(desp_y,2 ));
-        traslation = traslation +R_p*t*scale;
-        R_p = R*R_p;
+        else{
+            scale = sqrt(pow(desp_x,2)+pow(desp_y,2 ));
+            R_p = R*R_p;
+            traslation = traslation +R_p*t*scale;
+            
+        }
         
         odometry.push_back(traslation.t());
         plot_x.push_back(ground_truth.at<double>(index1_int,0));
@@ -160,6 +167,7 @@ cv::CommandLineParser parser(argc, argv, keys);
         plot->setMaxX (max_x+10);
         plot->setMinX (min_x-10);
         plot->render( plot_result );
+        cout<<"Nro imagenes procesadas = "<<plot_x.rows/2<<endl;
 
           //imshow("Puntos detectados FAST-1", img_keypoints_1 );
          
@@ -171,6 +179,7 @@ cv::CommandLineParser parser(argc, argv, keys);
         Mat img_win;
         vconcat(img_res1, img_res2, img_win);
         imshow( "Fast", img_win);
+        imwrite( "Ouput_ODO_"+patch::to_string(_detector)+"_"+patch::to_string(_matcher)+".jpg", img_win);
         
         //cout<< "Traslation" << traslation<< endl;
 
@@ -209,6 +218,8 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int _detector,
   detector -> detectAndCompute( img_1, Mat(), keypoints_1, descriptors_1 );
   detector -> detectAndCompute( img_2, Mat(), keypoints_2, descriptors_2 );
 
+  
+
   vector< vector<DMatch> > matches; // Cambio
   matcher-> knnMatch( descriptors_1, descriptors_2, matches, 2 );
   double nn_match_ratio = 0.8f; // Nearest-neighbour matching ratio
@@ -219,14 +230,11 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int _detector,
           matched2.push_back(keypoints_2[matches[i][0].trainIdx]);
       }
   }
-  //cout << "Puntos detectados = "<< keypoints_1.size()<< endl;
-  //-- Paso 2: Definir la region de interes (ROI)
-  /*
   int thresholdx = 40, thresholdy = 50;
-  thresholdRot(keypoints_1, thresholdx, w1, h1, key_points_ROT_out); // Puntos a considerar para la rotacion
-  thresholdTrans(key_points_ROT_out, thresholdy, w1, h1,key_points_TRANS_out); // Puntos a considerar para la traslacion
-  */
-  //cout << "Puntos bajo analisis ="<< keypointsOK.size()<< endl;
+  w1 = img_1.size().width;
+  h1 = img_1.size().height;
+
+  
 
 
 
@@ -249,6 +257,7 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int _detector,
 
   std::vector<Point2f> points1_OK, points2_OK; // Puntos finales bajos analisis
   vector<int> point_indexs;
+
   cv::KeyPoint::convert(matched1, points1_OK,point_indexs);
   cv::KeyPoint::convert(matched2, points2_OK,point_indexs);
 
@@ -331,18 +340,21 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int _detector,
     // select input matcher
         switch (_matcher)
         {
-        case "USE_BRUTE_FORCE":
+        case USE_BRUTE_FORCE:
         {
+            cout<<"Descriptor: BRUTE_FORCE"<<endl;
             matcher = BFMatcher::create();
             break;
         }
-        case "USE_FLANN":
-        {
+        case USE_FLANN:
+        {   
+            cout<<"Descriptor: FLANN"<<endl;
             matcher = FlannBasedMatcher::create();
             break;
         }
         default:
         {
+            cout<<"Descriptor: FLANN"<<endl;
             matcher = FlannBasedMatcher::create();
             break;
         }
@@ -351,33 +363,39 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int _detector,
     void get_detector(int _detector){
         switch (_detector)
             {
-            case "USE_KAZE":
+            case USE_KAZE:
             {
+                cout<<"Detector: KAZE"<<endl;
                 detector = KAZE::create();
                 break;
             }
-            case "USE_AKAZE":
+            case USE_AKAZE:
             {
+                cout<<"Detector: AKAZE"<<endl;
                 detector = AKAZE::create();
                 break;
             }
-            case "USE_SIFT":
+            case USE_SIFT:
             {
+                cout<<"Detector: SIFT"<<endl;
                 detector = SIFT::create();
                 break;
             }
-            case "USE_SURF":
+            case USE_SURF:
             {
+                cout<<"Detector: SURF"<<endl;
                 detector = SURF::create(400);
                 break;
             }
-            case "USE_ORB":
+            case USE_ORB:
             {
+                cout<<"Detector: ORB"<<endl;
                 detector = ORB::create();
                 break;
             }
             default:
             {
+                cout<<"Detector: KAZE"<<endl;
                 detector = KAZE::create();
                 break;
             }
@@ -385,6 +403,7 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int _detector,
     }
 //  g++ -g -o Visual_ODO_Features.out Visual_ODO_Features.cpp `pkg-config opencv --cflags --libs`
 // ./Visual_ODO_Features.out ../../../../../../../media/victor/CAB21993B219855B/Datasets/00/
+//./Visual_ODO_Features.out -directory=../../../../Datasets/00/00.txt.d/ -detector=0 -matcher=0 -first_frame=30 -last_frame=4539
 
 // https://gitlab.com/srrg-software/srrg_proslam/tree/master
 // https://stackoverflow.com/questions/29407474/how-to-understand-kitti-camera-calibration-files

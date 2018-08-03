@@ -41,20 +41,20 @@ def thresholdRot(img, thresholdx, w, h): # verifica si el punto se encuentra en 
     return imgPoints
 
 #Stanford deep learning, berkley
-fIdx = 57
-dataset = '../../../Datasets/kitti/odometry/00/image_2'
+fIdx = 500
+dataset = '../../../Datasets/00/00.txt.d/camera_left.image_raw_'
 # dataset = '../ressources/kitti/odometry/02/image_2'  # OR use that database
 
 import odotools as odotools
-odotools.read_poses(dataset + "/../../poses", "00", fIdx)
+odotools.read_poses('../../../Datasets/00/', "00_gt", fIdx)
 gt_poses = np.zeros((0, 2), dtype=np.float)  # (x, y) relative camera coordinates
 
 poses = np.zeros((0, 2), dtype=np.float)  # (x, y) relative camera coordinates
 R_p, t_p = None, None
 
 while True:
-    im0_path = '%s/%06d.png' % (dataset, fIdx)
-    im1_path = '%s/%06d.png' % (dataset, fIdx+1)
+    im0_path = '%s%08d.pgm' % (dataset, fIdx)
+    im1_path = '%s%08d.pgm' % (dataset, fIdx+1)
     im1 = cv2.imread(im0_path)
     im2 = cv2.imread(im1_path)
     if fIdx == 500:

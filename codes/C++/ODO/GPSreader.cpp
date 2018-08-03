@@ -69,10 +69,12 @@ void get_gps_data(Mat &gps_odometry, int first_index){
         gps_odometry.push_back(point);
     }
 
+    /*
     cout<<gps_odometry.at<double>(2,0)<<endl;
     cout<<gps_odometry.at<double>(2,1)<<endl;
     cout<< gps_data.rows<<endl;
     cout<< "first point" <<first_x<< ","<< first_y<< endl;
+    */
     inFile.close();
 }
 // g++ -g -o GPSreader.out GPSreader.cpp `pkg-config opencv --cflags --libs`
