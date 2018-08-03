@@ -137,23 +137,70 @@ cv::CommandLineParser parser(argc, argv, keys);
         double desp_x = ground_truth.at<double>(index2_int,0)-ground_truth.at<double>(index1_int,0);
         double desp_y = ground_truth.at<double>(index2_int,1)-ground_truth.at<double>(index1_int,1);
         if (first_frame == 1){
+            
+            scale = sqrt(pow(desp_x,2)+pow(desp_y,2 ));
+            Mat traslation2align= (Mat::eye(Size(3, 3), CV_64F))*t*scale;
+            Point2f vector_gps, vector_odov;
+            vector_gps.x =  ground_truth.at<double>(index2_int,0);
+            vector_gps.y =  ground_truth.at<double>(index2_int,1);
+            // Normalizacion
+            vector_gps.x =  vector_gps.x/sqrt(pow(vector_gps.x,2)+pow(vector_gps.y,2));
+            vector_gps.y =  vector_gps.y/sqrt(pow(vector_gps.x,2)+pow(vector_gps.y,2));
+            
+            vector_odov.x = traslation2align.at<double>(0,0);
+            vector_odov.y = traslation2align.at<double>(0,2);
+            vector_odov.x =  vector_odov.x/sqrt(pow(vector_odov.x,2)+pow(vector_odov.y,2));
+            vector_odov.y =  vector_odov.y/sqrt(pow(vector_odov.x,2)+pow(vector_odov.y,2));
+            float cross_product = vector_odov.x*vector_gps.y-vector_odov.y*vector_gps.x;
+            float dot_product = vector_odov.x*vector_gps.x+vector_odov.y*vector_gps.y;
+             R_p = Mat::zeros(3, 3, CV_64F);
+             
+             R_p.at<double>(0,0) = dot_product;
+             R_p.at<double>(0,1) = -cross_product;
+             R_p.at<double>(2,0) = cross_product; // Error de años porq la componente y esta en la 3 fila :/
+             R_p.at<double>(2,1) = dot_product;
+             R_p.at<double>(1,2) = 1;
+             
+            R_p = Mat::eye(3, 3, CV_64F);
+             
+            /*
+            R_p.at<double>(0,0) = 1/sqrt(2);
+             R_p.at<double>(0,1) = -1/sqrt(2);
+             R_p.at<double>(2,0) =  1/sqrt(2);
+             R_p.at<double>(2,1) = 1/sqrt(2);;
+             R_p.at<double>(1,2) = 1;
+             
+            
+            Mat v_matrix=  Mat::zeros(3, 3, CV_64F);
+            v_matrix.at<double>(0,1) = v3;
+            v_matrix.at<double>(1,0) = -v3;
+            R_p = (Mat::eye(Size(3, 3), CV_64F))+v_matrix+(v_matrix*v_matrix)*1.0/(1.0+dot_product);
+            */
             traslation = Mat::zeros(3, 1, CV_64F);
-            R_p = Mat::eye(Size(3, 3), CV_64F);
+            cout <<R_p<<endl;
+            cout << "Vertor_GPS"<<vector_gps<<endl;
+            cout << "Vector ODOV"<<vector_odov<<endl;
             first_frame = 0;
         }
         else{
+            /*
+            t = Mat::zeros(Size(1, 3), CV_64F);
+            t.at<double>(0,0) = 1;
+            R = Mat::eye(Size(3, 3), CV_64F);
+            */
             scale = sqrt(pow(desp_x,2)+pow(desp_y,2 ));
-            R_p = R*R_p;
+            cout << "scala"<<scale<<endl;
             traslation = traslation +R_p*t*scale;
+            R_p = R*R_p;
             
         }
         
         odometry.push_back(traslation.t());
-        plot_x.push_back(ground_truth.at<double>(index1_int,0));
-        plot_y.push_back(ground_truth.at<double>(index2_int,1));
-
+        //plot_x.push_back(ground_truth.at<double>(index1_int,0));
+        //plot_y.push_back(ground_truth.at<double>(index2_int,1));
+        cout<<"Translation"<<traslation<<endl;
         plot_x.push_back(traslation.row(0));
-        plot_y.push_back(traslation.row(2));
+        plot_y.push_back(traslation.row(2)); // Y es la tercera fila
         double min_x, max_x, min_y, max_y;
         minMaxLoc(plot_x, &min_x, &max_x);
         minMaxLoc(plot_y, &min_y, &max_y);
@@ -180,6 +227,7 @@ cv::CommandLineParser parser(argc, argv, keys);
         vconcat(img_res1, img_res2, img_win);
         imshow( "Fast", img_win);
         imwrite( "Ouput_ODO_"+patch::to_string(_detector)+"_"+patch::to_string(_matcher)+".jpg", img_win);
+        cout<<"Render"<<endl;
         
         //cout<< "Traslation" << traslation<< endl;
 
@@ -402,7 +450,7 @@ int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int _detector,
             }
     }
 //  g++ -g -o Visual_ODO_Features.out Visual_ODO_Features.cpp `pkg-config opencv --cflags --libs`
-// ./Visual_ODO_Features.out ../../../../../../../media/victor/CAB21993B219855B/Datasets/00/
+// ./Visual_ODO_Features.out -directory=../../../../../../../media/victor/CAB21993B219855B/Datasets/00/ -detector=0 -matcher=0 -first_frame=30 -last_frame=4539
 //./Visual_ODO_Features.out -directory=../../../../Datasets/00/00.txt.d/ -detector=0 -matcher=0 -first_frame=30 -last_frame=4539
 
 // https://gitlab.com/srrg-software/srrg_proslam/tree/master
