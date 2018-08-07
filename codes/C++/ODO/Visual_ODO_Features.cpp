@@ -82,8 +82,6 @@ cv::CommandLineParser parser(argc, argv, keys);
     }
 
 
-    
-
     string file_directory = parser.get<string>("directory"); // Direccion del directorio con imagenes
     int _detector = parser.get<int>("detector");
     int _matcher = parser.get<int>("matcher");
@@ -123,6 +121,8 @@ cv::CommandLineParser parser(argc, argv, keys);
     double Npoints_mean = 0;
     double Dist_recorrida = 0;
 
+    VideoWriter outputVideo;
+    outputVideo.open("Ouput_ODOV_"+patch::to_string(_detector)+"_"+patch::to_string(_matcher)+".mp4", VideoWriter::fourcc('M','J','P','G'), 15.0, Size(640, 600), true);
     Mat Data_test = Mat::zeros(Size(1, 8), CV_64F); //detector, descriptor, first_frame, last_frame, Dist_recorrida, Drift, FPS_mean, Nro de  puntos mean
     while(index1_int < index_last_int){ // penultima imagen  a leer
         clock_t begin = clock(); // Tiempo de inicio del codigo
@@ -239,19 +239,25 @@ cv::CommandLineParser parser(argc, argv, keys);
         plot_y.push_back(traslation.row(2)); // Y es la tercera fila
 
         // Plot data
-        double min_x, max_x, min_y, max_y;
+        double min_x, max_x, min_y, max_y, min, max;
         minMaxLoc(plot_x, &min_x, &max_x);
         minMaxLoc(plot_y, &min_y, &max_y);
+        min = min_x;
+        max = max_x;
+        if (min_y < min_x )min = min_y;
+        if (max_y > max_x )max = max_y;
+
         Mat plot_result;
         Ptr<plot::Plot2d> plot = plot::createPlot2d(plot_x, plot_y);
         plot->setPlotBackgroundColor( Scalar( 0, 0, 0 ) );
         plot->setNeedPlotLine(0);
         plot->setPlotAxisColor (Scalar( 255, 0, 0 ) );
-        plot->setMaxY (max_y+10);
-        plot->setMinY (min_y-10);
-        plot->setMaxX (max_x+10);
-        plot->setMinX (min_x-10);
+        plot->setMaxY (max+10);
+        plot->setMinY (min-10);
+        plot->setMaxX (max+10);
+        plot->setMinX (min-10);
         plot->render( plot_result );
+    
         
         FPS_mean = FPS_sum/(plot_x.rows/2.0);
         Npoints_mean = Npoints_sum/(plot_x.rows/2.0);
@@ -276,6 +282,7 @@ cv::CommandLineParser parser(argc, argv, keys);
         Mat img_win;
         vconcat(img_res1, img_res2, img_win);
         imshow( "ODOMETRIA VISUAL by LUJANO", img_win);
+        outputVideo << img_win;
         
         
         //cout<< "Traslation" << traslation<< endl;
@@ -283,11 +290,12 @@ cv::CommandLineParser parser(argc, argv, keys);
         //cout<< "Indice =" << index1_int<< endl; 
          if (break_prcs == 1)
             break; // Mostrar la imagen hasta que se presione una teclas
+            
         index1_int ++; // Siguiente par de imagenes
             
        
     }
-    imwrite( "Ouput_ODOV_"+patch::to_string(_detector)+"_"+patch::to_string(_matcher)+".jpg", img_win);
+    
     Data_test.at<double>(0,0) = double(_detector);
     Data_test.at<double>(0,1) = double(_matcher); 
     Data_test.at<double>(0,2) = double(first_frame_int);

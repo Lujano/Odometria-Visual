@@ -44,9 +44,11 @@ while True:
     # Plot trajectory and GT
     plt.figure(2)
     plt.clf()
+    plt.scatter((gt_poses[::-1])[:, 0][0], (gt_poses[::-1])[:, 1][0],marker = '^', c='red', label="Final", s = 400)
+    plt.scatter(gt_poses[:, 0][0], gt_poses[:, 1][0],marker = '^', c='black', label="Origen", s = 400)
     plt.plot(gt_poses[:, 0], gt_poses[:, 1], marker='s', c='g', label="GroundTruth")
-    plt.axis('equal')
-    plt.title("Frame %d\n" % (fIdx))
+    plt.xlabel("x(m)")
+    plt.ylabel("y(m)")
     plt.legend()
 
     plt.draw()
