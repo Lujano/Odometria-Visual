@@ -332,6 +332,7 @@ static void help()
             "./main.out <directory_name>, Default is ../data/pic1.png\n" << endl;
 }
 int Odometry(Mat img_1, Mat img_2, Mat &R, Mat &t, Mat &imageOut, int _detector, int _matcher, double *Npoints,double *Npairs){
+ clock_t begin = clock(); // Tiempo de inicio del codigo
   int w1, h1; // Image size
   w1 = img_1.size().width;
   h1 = img_1.size().height;
@@ -373,17 +374,18 @@ cout << "Keypoint"<<matches.size()<<"rows"<<descriptors_roi.size()<<" cols ="<<d
   //-- Paso 4: Calcular la matriz Esencial
     // Parametros intrisecos de la camara
   double fx, fy, focal, cx, cy;
+  /*
   fx = 9.842439e+02;
   fy = 9.808141e+02;
   cx =  6.900000e+02;
   cy =  2.331966e+02;
-  /*
+  */
   fx = 7.188560000000e+02;
 
   fy = 7.188560000000e+02;
   cx =  6.071928000000e+02;
   cy =  1.852157000000e+02;
-  */
+  
   focal = fx;
   Mat E; // matriz esencial
 
@@ -401,7 +403,10 @@ cout << "Keypoint"<<matches.size()<<"rows"<<descriptors_roi.size()<<" cols ="<<d
    int p;
    p = recoverPose(E, points1_OK, points2_OK, R, t, focal, Point2d(cx, cy), noArray()   );
 
-
+  clock_t end = clock(); // Tiempo de inicio del codigo
+  double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+  cout << "Tiempo loop"<<elapsed_secs<<endl;
+  
 //-- Paso 6: Draw keypoints
   Mat img_keypoints_1, img_keypoints_2, img_keypointsOK; 
 
@@ -520,7 +525,7 @@ cout << "Keypoint"<<matches.size()<<"rows"<<descriptors_roi.size()<<" cols ="<<d
             }
             }
     }
-//  g++ -g -o Visual_ODO_Features.out Visual_ODO_Features.cpp `pkg-config opencv --cflags --libs`
+//  g++ -g -o Visual_ODO_Features2.out Visual_ODO_Features2.cpp `pkg-config opencv --cflags --libs`
 // ./Visual_ODO_Features.out -directory=../../../../../../../media/victor/CAB21993B219855B/Datasets/00/ -detector=0 -matcher=0 -first_frame=30 -last_frame=4539
 //./Visual_ODO_Features.out -directory=../../../../Datasets/00/00.txt.d/ -detector=0 -matcher=0 -first_frame=30 -last_frame=4539
 
