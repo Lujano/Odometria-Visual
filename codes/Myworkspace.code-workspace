@@ -53,6 +53,9 @@
 		},
 		{
 			"path": "C++/ColorRestauration"
+		},
+		{
+			"path": "C++/ConvertVideoFrames"
 		}
 	],
 	"settings": {

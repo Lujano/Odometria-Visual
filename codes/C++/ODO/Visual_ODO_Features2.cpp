@@ -124,22 +124,24 @@ cv::CommandLineParser parser(argc, argv, keys);
     double Dist_recorrida = 0;
 
     VideoWriter outputVideo;
+    const string under_name = "frame_";//"camera_left.image_raw_";
+    const string format_file = ".jpg";//".pgm";
     outputVideo.open("Ouput_ODOV_"+patch::to_string(_detector)+"_"+patch::to_string(_matcher)+".mp4", VideoWriter::fourcc('M','J','P','G'), 15.0, Size(640, 600), true);
     Mat Data_test = Mat::zeros(Size(1, 9), CV_64F); //detector, descriptor, first_frame, last_frame, Dist_recorrida, Drift, FPS_mean, Nro de  puntos mean
     while(index1_int < index_last_int){ // penultima imagen  a leer
         clock_t begin = clock(); // Tiempo de inicio del codigo
-        index1_str = file_directory + "camera_left.image_raw_"+ patch::to_string(index1_int)+".pgm";
+        index1_str = file_directory + under_name+ patch::to_string(index1_int)+format_file;
         index2_int = index1_int+1;
-        index2_str = file_directory +"camera_left.image_raw_"+ patch::to_string(index2_int)+".pgm";
+        index2_str = file_directory +under_name+ patch::to_string(index2_int)+format_file;
         src = imread(index1_str,0); // Cargar con color, flag = 1
         src2 = imread(index2_str, 0);
 
         while ( src2.empty() & index1_int < index_last_int) // En caso de lectura de una imagen no existe
          {
             index1_int = index1_int+1;// Saltar a la siguiente imagen
-            cout<< "Imagen no encontrada:"<<patch::to_string(index1_int)+".pgm"<< endl;
+            cout<< "Imagen no encontrada:"<<patch::to_string(index1_int)+format_file<< endl;
             index2_int = index1_int+1;
-            index2_str = file_directory + "camera_left.image_raw_"+patch::to_string(index2_int)+".pgm";
+            index2_str = file_directory + under_name+patch::to_string(index2_int)+format_file;
             src2 = imread(index2_str, 0);
         }
         //Mat gray1, gray2;
@@ -216,7 +218,7 @@ cv::CommandLineParser parser(argc, argv, keys);
             R = Mat::eye(Size(3, 3), CV_64F);
             */
             //cout << "R ="<<R<<endl;
-            scale = sqrt(pow(desp_x,2)+pow(desp_y,2 ));
+            scale = 1;//sqrt(pow(desp_x,2)+pow(desp_y,2 ));
             traslation = traslation +R_p*t*scale;
             R_p = R*R_p;
             
@@ -236,8 +238,8 @@ cv::CommandLineParser parser(argc, argv, keys);
         gps.push_back(point_gps);
         error.push_back(point_error);
 
-        plot_x.push_back(ground_truth.at<double>(index1_int,0));
-        plot_y.push_back(ground_truth.at<double>(index2_int,1));
+        //plot_x.push_back(ground_truth.at<double>(index1_int,0));
+        //plot_y.push_back(ground_truth.at<double>(index2_int,1));
         //cout<<"Translation"<<traslation<<endl;
         plot_x.push_back(traslation.row(0));
         plot_y.push_back(traslation.row(2)); // Y es la tercera fila
@@ -380,12 +382,19 @@ cout << "Keypoint"<<matches.size()<<"rows"<<descriptors_roi.size()<<" cols ="<<d
   cx =  6.900000e+02;
   cy =  2.331966e+02;
   */
+   
+   // My Phone
+  fx = 1.3919704952075438e+03;
+  fy = 1.3919704952075438e+03;
+  cx =  640;
+  cy =  360;
+  /*
   fx = 7.188560000000e+02;
 
   fy = 7.188560000000e+02;
   cx =  6.071928000000e+02;
   cy =  1.852157000000e+02;
-  
+  */
   focal = fx;
   Mat E; // matriz esencial
 
@@ -528,6 +537,7 @@ cout << "Keypoint"<<matches.size()<<"rows"<<descriptors_roi.size()<<" cols ="<<d
 //  g++ -g -o Visual_ODO_Features2.out Visual_ODO_Features2.cpp `pkg-config opencv --cflags --libs`
 // ./Visual_ODO_Features.out -directory=../../../../../../../media/victor/CAB21993B219855B/Datasets/00/ -detector=0 -matcher=0 -first_frame=30 -last_frame=4539
 //./Visual_ODO_Features.out -directory=../../../../Datasets/00/00.txt.d/ -detector=0 -matcher=0 -first_frame=30 -last_frame=4539
+//./Visual_ODO_Features.out -directory=../../../../Datasets/Telefono/00/ -detector=0 -matcher=0 -first_frame=0 -last_frame=82
 
 // https://gitlab.com/srrg-software/srrg_proslam/tree/master
 // https://stackoverflow.com/questions/29407474/how-to-understand-kitti-camera-calibration-files

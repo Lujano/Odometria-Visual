@@ -109,7 +109,7 @@ public:
             }
             else
             {    
-                if (0)//readStringList(input, imageList))
+                if (readStringList(input, imageList))//readStringList(input, imageList))
                 {
                     inputType = IMAGE_LIST;
                     nrFrames = (nrFrames < (int)imageList.size()) ? nrFrames : (int)imageList.size();
@@ -174,7 +174,7 @@ public:
         }
         else if( atImageList < imageList.size() )
             result = imread(imageList[atImageList++], IMREAD_COLOR);
-
+            
         return result;
     }
 
@@ -246,12 +246,21 @@ enum { DETECTION = 0, CAPTURING = 1, CALIBRATED = 2 };
 bool runCalibrationAndSave(Settings& s, Size imageSize, Mat&  cameraMatrix, Mat& distCoeffs,
                            vector<vector<Point2f> > imagePoints );
 
-int main(int argc, char* argv[])
+int main(int argc, char** argv)
 {
-    help();
+    const String keys =
+    "{help h usage ? |      | print this message   }"
+    "{config    |      | configuration file} ";
+    cv::CommandLineParser parser(argc, argv, keys);
+    if (parser.has("help"))
+    {
+        help();
+        return 0;
+    }
+
     //! [file_read]
     Settings s;
-    const string inputSettingsFile = argc > 1 ? argv[1] : "default.xml";
+    const string inputSettingsFile = parser.get<string>("config"); 
     FileStorage fs(inputSettingsFile, FileStorage::READ); // Read the settings
    
     if (!fs.isOpened())
