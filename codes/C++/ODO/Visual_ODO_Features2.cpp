@@ -124,7 +124,7 @@ cv::CommandLineParser parser(argc, argv, keys);
     double Dist_recorrida = 0;
 
     VideoWriter outputVideo;
-    const string under_name = "frame_";//"camera_left.image_raw_";
+    const string under_name = "frame_";//"camera_left.image_raw_";//"frame_";
     const string format_file = ".jpg";//".pgm";
     outputVideo.open("Ouput_ODOV_"+patch::to_string(_detector)+"_"+patch::to_string(_matcher)+".mp4", VideoWriter::fourcc('M','J','P','G'), 15.0, Size(640, 600), true);
     Mat Data_test = Mat::zeros(Size(1, 9), CV_64F); //detector, descriptor, first_frame, last_frame, Dist_recorrida, Drift, FPS_mean, Nro de  puntos mean
@@ -238,7 +238,7 @@ cv::CommandLineParser parser(argc, argv, keys);
         gps.push_back(point_gps);
         error.push_back(point_error);
 
-        //plot_x.push_back(ground_truth.at<double>(index1_int,0));
+        //ṕlot_x.push_back(ground_truth.at<double>(index1_int,0));
         //plot_y.push_back(ground_truth.at<double>(index2_int,1));
         //cout<<"Translation"<<traslation<<endl;
         plot_x.push_back(traslation.row(0));
@@ -384,13 +384,13 @@ cout << "Keypoint"<<matches.size()<<"rows"<<descriptors_roi.size()<<" cols ="<<d
   */
    
    // My Phone
-  fx = 1.3919704952075438e+03;
-  fy = 1.3919704952075438e+03;
-  cx =  640;
-  cy =  360;
-  /*
-  fx = 7.188560000000e+02;
-
+   
+  fx = 1.3591966865130928e+03; //1.3591966865130928e+03
+  fy = 1.3591966865130928e+03;
+  cx =  640.0;
+  cy =  360.0;
+  
+/*
   fy = 7.188560000000e+02;
   cx =  6.071928000000e+02;
   cy =  1.852157000000e+02;
@@ -420,7 +420,7 @@ cout << "Keypoint"<<matches.size()<<"rows"<<descriptors_roi.size()<<" cols ="<<d
   Mat img_keypoints_1, img_keypoints_2, img_keypointsOK; 
 
   
-  drawKeypoints( img_1, matched1, img_keypointsOK, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
+  drawKeypoints( img_2, matched1, img_keypointsOK, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
 
   imageOut = img_keypointsOK;
   
@@ -517,7 +517,7 @@ cout << "Keypoint"<<matches.size()<<"rows"<<descriptors_roi.size()<<" cols ="<<d
             case USE_SURF:
             {
                 cout<<"Detector: SURF"<<endl;
-                detector = SURF::create(400);
+                detector = SURF::create();
                 break;
             }
             case USE_ORB:
@@ -535,9 +535,9 @@ cout << "Keypoint"<<matches.size()<<"rows"<<descriptors_roi.size()<<" cols ="<<d
             }
     }
 //  g++ -g -o Visual_ODO_Features2.out Visual_ODO_Features2.cpp `pkg-config opencv --cflags --libs`
-// ./Visual_ODO_Features.out -directory=../../../../../../../media/victor/CAB21993B219855B/Datasets/00/ -detector=0 -matcher=0 -first_frame=30 -last_frame=4539
+// ./Visual_ODO_Features2.out -directory=../../../../../../../media/victor/CAB21993B219855B/Datasets/00/ -detector=0 -matcher=0 -first_frame=30 -last_frame=4539
 //./Visual_ODO_Features.out -directory=../../../../Datasets/00/00.txt.d/ -detector=0 -matcher=0 -first_frame=30 -last_frame=4539
 //./Visual_ODO_Features.out -directory=../../../../Datasets/Telefono/00/ -detector=0 -matcher=0 -first_frame=0 -last_frame=82
-
+//./Visual_ODO_Features2.out -directory=../ConvertVideoFrames/Output -detector=2 -matcher=0 -first_frame=30 -last_frame=4539
 // https://gitlab.com/srrg-software/srrg_proslam/tree/master
 // https://stackoverflow.com/questions/29407474/how-to-understand-kitti-camera-calibration-files

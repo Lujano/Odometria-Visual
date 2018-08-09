@@ -66,11 +66,9 @@ int main( int argc, char** argv )
 
     int c_frame= 0;
     Mat frame;
-    for(c_frame = 0; c_frame < (n_frames-2); c_frame = c_frame+3) // Leer todos los frames del video
+    for(c_frame = 0; c_frame < (n_frames-2); c_frame = c_frame+1) // Leer todos los frames del video
     {
         
-        video_in >> frame; // get a new frame from camera
-        video_in >> frame; // get a new frame from camera
         video_in >> frame; // get a new frame from camera
         imshow("Video",frame);
         imwrite("Output/frame_"+patch::to_string(int(c_frame/3))+".jpg", frame);
